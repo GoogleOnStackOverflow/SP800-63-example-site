@@ -1,19 +1,33 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Nav, Navbar, NavItem, NavDropdown, MenuItem } from 'react-bootstrap'
 
 class App extends Component {
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
-      </div>
+      <Navbar>
+        <Navbar.Header>
+          <Navbar.Brand>
+            <a href="/">Example Site</a>
+          </Navbar.Brand>
+        </Navbar.Header>
+        <Nav>
+          <NavItem eventKey={1} href="#">
+            Info
+          </NavItem>
+          <NavDropdown eventKey={3} title="Policies" id="basic-nav-dropdown">
+            <MenuItem eventKey={3.1}>Privacy Risk Assesment</MenuItem>
+            <MenuItem eventKey={3.2}>Practice Statement</MenuItem>
+            <MenuItem eventKey={3.3}>Privacy Policy</MenuItem>
+            <MenuItem divider />
+            <MenuItem eventKey={3.4}>About</MenuItem>
+          </NavDropdown>
+          </Nav>
+          <Nav pullRight>
+          <NavItem eventKey={1} href="#">
+            {this.props.isLogin? "Logout" : "Login"}
+          </NavItem>
+        </Nav>
+      </Navbar>
     );
   }
 }
