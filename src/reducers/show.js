@@ -1,4 +1,4 @@
-import { LOADING, NOT_LOADING } from '../actions';
+import { LOADING, NOT_LOADING, WEAK_PWD, OPEN_ERR_ALERT, CLOSE_ERR_ALERT } from '../actions';
 
 const show = (state = {}, action) => {
   switch (action.type) {
@@ -11,6 +11,21 @@ const show = (state = {}, action) => {
       return {
         ...state,
         loading: false
+      }
+    case WEAK_PWD:
+      return {
+        ...state,
+        weak: action.weak
+      }
+    case OPEN_ERR_ALERT:
+      return {
+        ...state,
+        errMsg: action.message
+      }
+    case CLOSE_ERR_ALERT:
+      return {
+        ...state,
+        errMsg: undefined
       }
     default:
       return state;

@@ -1,13 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button, ControlLabel ,Col } from 'react-bootstrap';
 
-const FORM_PWD = 'FORM_PWD';
-const FORM_USR = 'FORM_USR';
+export const FORM_USR = 'FORM_USR';
 
-const LoginForm = ({submitOnClick, handleOnChange, state}) => {
+export const isEmail = (text) => {
+  if(!text) return false;
+  var p = text.indexOf('@');
+  return (p!==-1 && p!==0 && p!==(text.length-1));
+}
+
+const LoginForm = ({handleOnChange, state, history}) => {
   return (
     <Form horizontal>
+        <h4>Login</h4>
         <FormGroup controlId="formHorizontalEmail">
         <Col componentClass={ControlLabel} sm={2}>
           Email
@@ -19,29 +26,22 @@ const LoginForm = ({submitOnClick, handleOnChange, state}) => {
             onChange = {(e) => {
               handleOnChange(FORM_USR, e.target.value);
             }}
+            value={state[FORM_USR]}
           />
         </Col>
         </FormGroup>
 
-        <FormGroup controlId="formHorizontalPassword">
-        <Col componentClass={ControlLabel} sm={2}>
-          Password
-        </Col>
-        <Col sm={10}>
-          <FormControl 
-            type="password" 
-            placeholder="Password" 
-            onChange = {(e) => {
-              handleOnChange(FORM_PWD, e.target.value);
-            }}
-          />
-        </Col>
-      </FormGroup>
-
       <FormGroup>
         <Col smOffset={2} sm={10}>
-          <Button onClick={() => {submitOnClick(state[FORM_USR], state[FORM_PWD])}}>
-            Sign in
+          <Button 
+            onClick={()=>{history.push('/registerpwd')}}
+            disabled={!isEmail(state[FORM_USR])}>
+            Sign on
+          </Button>
+          <Button 
+            onClick={()=>{history.push('/loginpwd')}}
+            disabled={!isEmail(state[FORM_USR])}>
+            Login
           </Button>
         </Col>
       </FormGroup>
@@ -51,8 +51,7 @@ const LoginForm = ({submitOnClick, handleOnChange, state}) => {
 
 LoginForm.propTypes = {
   state: PropTypes.obj,
-  handleOnChange: PropTypes.func, 
-  submitOnClick: PropTypes.func
+  handleOnChange: PropTypes.func,
 }
 
-export default LoginForm;
+export const LoginFormWithRouter = withRouter(LoginForm);

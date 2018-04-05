@@ -9,6 +9,7 @@ import App from './App'
 import registerServiceWorker from './registerServiceWorker'
 import { PWD_TOKEN_NAME, OTP_TOKEN_NAME, getCookie } from './cookiesHelper'
 import Login from './containers/Login'
+import LoginPasswordForm from './containers/LoginPasswordForm'
 
 let store = createStore(loginStore);
 
@@ -38,6 +39,7 @@ ReactDOM.render(
       <div>
         <Route path="/" component={App} />
         <Route path="/login" component={Login} />
+        <Route path="/loginpwd" component={LoginPasswordForm} />
       {
         //<Route path="/otp" component={OtpLogin} />
         //<Route path="/service" component={Checkout} onEnter={requireAuth} />

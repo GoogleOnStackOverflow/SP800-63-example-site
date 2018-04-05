@@ -21,3 +21,27 @@ export const notLoading = () => {
     type: NOT_LOADING
   }
 }
+
+export const WEAK_PWD = 'WEAK_PWD';
+export const OPEN_ERR_ALERT = 'OPEN_ERR_ALERT';
+export const CLOSE_ERR_ALERT = 'CLOSE_ERR_ALERT';
+
+export const weak = (weak) => {
+  return {
+    type: WEAK_PWD,
+    weak
+  }
+}
+
+export const errorMsg = (message) => {
+  return {
+    type:OPEN_ERR_ALERT,
+    message
+  }
+}
+
+export const closeMsgModal = () => {
+  return {
+    type: CLOSE_ERR_ALERT
+  }
+}

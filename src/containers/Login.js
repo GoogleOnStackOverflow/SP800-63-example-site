@@ -1,7 +1,6 @@
 import { connect } from 'react-redux';
-import LoginFrom from '../components/LoginForm';
-import { handleValueOnChange, loading, notLoading } from '../actions';
-import { API_SERVER } from '../config'
+import { LoginFormWithRouter } from '../components/LoginForm';
+import { handleValueOnChange } from '../actions';
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -13,15 +12,6 @@ const mapDispatchToProps = dispatch => {
   return {
     handleOnChange: (name, value) => {
       dispatch(handleValueOnChange(name, value));
-    },
-    submitOnClick: (usrname, pwd) => {
-      dispatch(loading());
-      fetch(`${API_SERVER}/pwdlogin?usr=${usrname}&pwd=${pwd}`).then(res => {
-        return res.json();
-      }).then(data => {
-        console.log(data);
-        dispatch(notLoading());
-      }).catch(error => console.error(error))
     }
   }
 }
@@ -29,6 +19,6 @@ const mapDispatchToProps = dispatch => {
 const Login = connect(
   mapStateToProps,
   mapDispatchToProps
-)(LoginFrom)
+)(LoginFormWithRouter)
  
 export default Login
