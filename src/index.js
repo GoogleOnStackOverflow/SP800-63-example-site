@@ -7,31 +7,12 @@ import { BrowserRouter } from 'react-router-dom'
 import loginStore from './reducers'
 import App from './App'
 import registerServiceWorker from './registerServiceWorker'
-import { PWD_TOKEN_NAME, OTP_TOKEN_NAME, getCookie } from './cookiesHelper'
 import Login from './containers/Login'
 import LoginPasswordForm from './containers/LoginPasswordForm'
+import LoginOTPForm from './containers/LoginOTPForm'
+import RegisterFormPwd from './containers/RegisterFormPwd'
 
 let store = createStore(loginStore);
-
-const pwToken = () => {
-  return getCookie(PWD_TOKEN_NAME) === "" ? true : false;
-}
-
-const otpToken = () => {
-  return getCookie(OTP_TOKEN_NAME) === "" ? true : false;
-}
-
-const requireAuth = (nextState, replace) => {
-  if (!otpToken() && !pwToken()) {
-    replace({
-      pathname: '/login'
-    })
-  } else if (!otpToken()) {
-    replace({
-      pathname: '/otp'
-    })
-  }
-}
 
 ReactDOM.render(
   <Provider store={store}>
@@ -40,8 +21,10 @@ ReactDOM.render(
         <Route path="/" component={App} />
         <Route path="/login" component={Login} />
         <Route path="/loginpwd" component={LoginPasswordForm} />
+        <Route path="/loginotp" component={LoginOTPForm} />
+        <Route path="/registerpwd" component={RegisterFormPwd} />
       {
-        //<Route path="/otp" component={OtpLogin} />
+        //
         //<Route path="/service" component={Checkout} onEnter={requireAuth} />
       }
       </div>

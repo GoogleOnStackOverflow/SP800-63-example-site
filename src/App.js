@@ -2,10 +2,6 @@ import React, { Component } from 'react';
 import { Nav, Navbar, NavItem, NavDropdown, MenuItem } from 'react-bootstrap'
 import AlertModalContainer from './containers/AlertModalContainer'
 
-const loginOnClick = () => {
-  return "/login";
-}
-
 class App extends Component {
   render() {
     return (

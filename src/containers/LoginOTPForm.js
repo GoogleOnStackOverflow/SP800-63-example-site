@@ -1,14 +1,14 @@
 import { connect } from 'react-redux';
 import PasswordForm from '../components/PasswordForm';
 import { handleValueOnChange, loading, notLoading, errorMsg } from '../actions';
-import { loginWithEmailPwd } from '../firebaseActions'
+import { logout } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
     state: state.forms,
-    title: `Password for ${state.forms['FORM_USR']}`,
-    placeHolder: 'Password',
-    formName: 'FORM_PWD'
+    title: `OTP for ${state.forms['FORM_USR']}`,
+    placeHolder: 'OTP',
+    formName: 'FORM_OTP'
   }
 }
 
@@ -20,19 +20,16 @@ const mapDispatchToProps = dispatch => {
     
     submitOnClick: (state, history) => {
       dispatch(loading());
-      loginWithEmailPwd(state['FORM_USR'],state['FORM_PWD']).catch(err => {
-        dispatch(handleValueOnChange('FORM_PWD', ''));
-        dispatch(notLoading());
-        dispatch(errorMsg(err.message));
-        history.push('/loginpwd');
-      })
+      // TODO verify the OTP
       dispatch(notLoading());
-      dispatch(handleValueOnChange('FORM_PWD', ''));
+      console.log('pass');
       history.push('/loginotp');
     },
     cancelOnClick: (history) => {
-      dispatch(handleValueOnChange('FORM_PWD', ''));
-      history.push('/login');
+      logout(()=>{history.push('/login')}).catch(err => {
+        dispatch(errorMsg(err.message));
+        history.push('/login');  
+      })
     }
     /*
     registerOnClick: (usrname, pwd) => {
@@ -51,9 +48,9 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const LoginPasswordForm = connect(
+const LoginOTPForm = connect(
   mapStateToProps,
   mapDispatchToProps
 )(PasswordForm)
  
-export default LoginPasswordForm
+export default LoginOTPForm

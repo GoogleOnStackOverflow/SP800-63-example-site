@@ -13,6 +13,10 @@ export const loginWithEmailPwd = (email, password) => {
   return auth.signInWithEmailAndPassword(email, password);
 }
 
+export const logout = (callback) => {
+  return auth.signOut().then(()=>{callback()})
+}
+
 export const sendEmailVerification = (callback) => {
   // [START sendemailverification]
   auth.currentUser.sendEmailVerification().then(() => {
