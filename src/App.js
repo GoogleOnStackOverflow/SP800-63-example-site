@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
 import { Nav, Navbar, NavItem, NavDropdown, MenuItem } from 'react-bootstrap'
 
+const loginOnClick = () => {
+  return "/login";
+}
+
 class App extends Component {
   render() {
     return (

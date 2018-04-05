@@ -40,7 +40,7 @@ const LoginForm = ({submitOnClick, handleOnChange, state}) => {
 
       <FormGroup>
         <Col smOffset={2} sm={10}>
-          <Button onClick={submitOnClick(state[FORM_USR], state[FORM_PWD])}>
+          <Button onClick={() => {submitOnClick(state[FORM_USR], state[FORM_PWD])}}>
             Sign in
           </Button>
         </Col>
