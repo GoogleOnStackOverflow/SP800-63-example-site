@@ -17,9 +17,30 @@ export const logout = (callback) => {
   return auth.signOut().then(()=>{callback()})
 }
 
+export const hasCurrentUser = () => {
+  return (auth.currentUser)? true : false;
+}
+
 export const sendEmailVerification = (callback) => {
-  // [START sendemailverification]
-  auth.currentUser.sendEmailVerification().then(() => {
-    callback();
-  });
+  if(auth.currentUser)
+    return auth.currentUser.sendEmailVerification().then(() => {
+      callback();
+    });
+  return new Promise((resolve, reject) => {
+    throw Error('Permission Denied. User not logged in');
+  })
+}
+
+export const currentUserEmailVerified = () => {
+  if(auth.currentUser)
+    return auth.currentUser.emailVerified;
+  else return false;
+}
+
+export const removeAccount = () => {
+  if(!auth.currentUser)
+    return new Promise((resolve, reject) => {
+      throw Error('Permission Denied. User not logged in');
+    });
+  return auth.currentUser.delete();
 }

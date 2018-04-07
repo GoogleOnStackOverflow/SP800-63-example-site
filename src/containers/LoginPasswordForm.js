@@ -20,34 +20,25 @@ const mapDispatchToProps = dispatch => {
     
     submitOnClick: (state, history) => {
       dispatch(loading());
-      loginWithEmailPwd(state['FORM_USR'],state['FORM_PWD']).catch(err => {
+      loginWithEmailPwd(state['FORM_USR'],state['FORM_PWD'])
+      .then(() => {
+        dispatch(notLoading());
+        dispatch(handleValueOnChange('FORM_PWD', ''));
+        history.push('/verifymail');
+      })
+      .catch(err => {
         dispatch(handleValueOnChange('FORM_PWD', ''));
         dispatch(notLoading());
-        dispatch(errorMsg(err.message));
-        history.push('/loginpwd');
+        if(err.code === 'auth/wrong-password')
+          dispatch(errorMsg(err.message, '/loginpwd'));
+        else
+          dispatch(errorMsg(err.message, '/login'));
       })
-      dispatch(notLoading());
-      dispatch(handleValueOnChange('FORM_PWD', ''));
-      history.push('/loginotp');
     },
     cancelOnClick: (history) => {
       dispatch(handleValueOnChange('FORM_PWD', ''));
       history.push('/login');
     }
-    /*
-    registerOnClick: (usrname, pwd) => {
-      dispatch(loading());
-      registerWithEmail(usrname, pwd).catch(err => {
-        if(err.code === 'auth/weak-password') {
-          dispatch(notLoading());
-          dispatch(weak(true));
-        } else {
-          dispatch(notLoading());
-          dispatch(errorMsg(err.message));
-        }
-      });
-      dispatch(notLoading());
-    }*/
   }
 }
 

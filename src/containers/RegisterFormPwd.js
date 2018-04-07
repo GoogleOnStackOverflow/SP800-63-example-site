@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import RegisterPwdForm from '../components/RegisterPwdForm';
-import { handleValueOnChange, loading, notLoading, errorMsg } from '../actions';
-import { registerWithEmail , logout } from '../firebaseActions'
+import { handleValueOnChange, loading, notLoading, errorMsg, successMsg } from '../actions';
+import { sendEmailVerification, registerWithEmail } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -17,20 +17,25 @@ const mapDispatchToProps = dispatch => {
     
     submitOnClick: (state, history) => {
       dispatch(loading());
-      registerWithEmail(state['FORM_USR'], state['FORM_REG_PWD']).catch(err => {
+      registerWithEmail(state['FORM_USR'], state['FORM_REG_PWD'])
+      .then(usr => {
+        dispatch(handleValueOnChange('FORM_REG_PWD_CHECK', ''));
+        dispatch(handleValueOnChange('FORM_REG_PWD', ''));
+        sendEmailVerification(() => {
+          dispatch(notLoading());
+          dispatch(successMsg('An verification mail has been sent to your mail address.', '/verifymail'))
+        }).catch(err => {
+          dispatch(notLoading());
+          dispatch(errorMsg(err.message, '/login'));
+        })
+      }, err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
-        history.push('/registerpwd');
-      });
-      
-      dispatch(notLoading());
-      dispatch(handleValueOnChange('FORM_REG_PWD_CHECK', ''));
-      dispatch(handleValueOnChange('FORM_REG_PWD', ''));
-      logout(()=>{history.push('/login');/*TODO dispatch(successMsg('An verification mail has been sent to your mail address.'))*/}).catch(err => {
-        dispatch(errorMsg(err.message));
-        history.push('/login');  
       })
-      
+      .catch(err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
+      });
     },
     cancelOnClick: (history) => {
       dispatch(handleValueOnChange('FORM_REG_PWD_CHECK', ''));

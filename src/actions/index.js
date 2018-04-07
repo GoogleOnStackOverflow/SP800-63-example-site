@@ -23,8 +23,10 @@ export const notLoading = () => {
 }
 
 export const WEAK_PWD = 'WEAK_PWD';
-export const OPEN_ERR_ALERT = 'OPEN_ERR_ALERT';
-export const CLOSE_ERR_ALERT = 'CLOSE_ERR_ALERT';
+export const OPEN_ALERT = 'OPEN_ALERT';
+export const CLOSE_ALERT = 'CLOSE_ALERT';
+export const OPEN_CHECK = 'OPEN_CHECK'
+export const CLOSE_CHECK = 'CLOSE_CHECK';
 
 export const weak = (weak) => {
   return {
@@ -33,15 +35,37 @@ export const weak = (weak) => {
   }
 }
 
-export const errorMsg = (message) => {
+export const errorMsg = (message, navPath) => {
   return {
-    type:OPEN_ERR_ALERT,
-    message
+    type:OPEN_ALERT,
+    title: 'Error',
+    message, navPath
   }
 }
 
-export const closeMsgModal = () => {
+export const successMsg = (message, navPath) => {
   return {
-    type: CLOSE_ERR_ALERT
+    type:OPEN_ALERT,
+    title: 'Success',
+    message, navPath
+  }
+}
+
+export const closeAlert = () => {
+  return {
+    type: CLOSE_ALERT
+  }
+}
+
+export const openCheck = (title, message, noNav, yesNav) => {
+  return {
+    type: OPEN_CHECK,
+    title, message, noNav, yesNav
+  }
+}
+
+export const closeCheck = () => {
+  return {
+    type: CLOSE_CHECK
   }
 }

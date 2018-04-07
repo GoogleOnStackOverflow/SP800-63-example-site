@@ -11,6 +11,7 @@ import Login from './containers/Login'
 import LoginPasswordForm from './containers/LoginPasswordForm'
 import LoginOTPForm from './containers/LoginOTPForm'
 import RegisterFormPwd from './containers/RegisterFormPwd'
+import VerifyEmailPage from './containers/VerifyEmailPage'
 
 let store = createStore(loginStore);
 
@@ -23,6 +24,7 @@ ReactDOM.render(
         <Route path="/loginpwd" component={LoginPasswordForm} />
         <Route path="/loginotp" component={LoginOTPForm} />
         <Route path="/registerpwd" component={RegisterFormPwd} />
+        <Route path="/verifymail" component={VerifyEmailPage} />
       {
         //
         //<Route path="/service" component={Checkout} onEnter={requireAuth} />

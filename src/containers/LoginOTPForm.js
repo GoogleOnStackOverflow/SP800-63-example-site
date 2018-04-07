@@ -26,25 +26,12 @@ const mapDispatchToProps = dispatch => {
       history.push('/loginotp');
     },
     cancelOnClick: (history) => {
-      logout(()=>{history.push('/login')}).catch(err => {
+      logout(()=>{history.push('/login')})
+      .catch(err => {
         dispatch(errorMsg(err.message));
         history.push('/login');  
       })
     }
-    /*
-    registerOnClick: (usrname, pwd) => {
-      dispatch(loading());
-      registerWithEmail(usrname, pwd).catch(err => {
-        if(err.code === 'auth/weak-password') {
-          dispatch(notLoading());
-          dispatch(weak(true));
-        } else {
-          dispatch(notLoading());
-          dispatch(errorMsg(err.message));
-        }
-      });
-      dispatch(notLoading());
-    }*/
   }
 }
 

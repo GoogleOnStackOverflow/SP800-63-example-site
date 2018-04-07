@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from "react-router-dom";
-import { Form, FormGroup, FormControl, Button, ControlLabel ,Col } from 'react-bootstrap';
+import { Form, FormGroup, FormControl, Button, ControlLabel , Col, HelpBlock } from 'react-bootstrap';
 import { FORM_USR, isEmail } from './LoginForm'
 
 class RegisterPasswordForm extends React.Component {
@@ -29,6 +29,7 @@ class RegisterPasswordForm extends React.Component {
                 handleOnChange('FORM_REG_PWD', e.target.value);
               }}
             />
+            <HelpBlock>A Password should be at least 8 in length</HelpBlock>
           </Col>
         </FormGroup>
         <FormGroup 
@@ -45,6 +46,7 @@ class RegisterPasswordForm extends React.Component {
                 handleOnChange('FORM_REG_PWD_CHECK', e.target.value);
               }}
             />
+            <HelpBlock>Check the password by type it again.</HelpBlock>
           </Col>
         </FormGroup>
 
