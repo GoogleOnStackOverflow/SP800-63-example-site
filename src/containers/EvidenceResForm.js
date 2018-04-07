@@ -1,16 +1,22 @@
 import { connect } from 'react-redux';
 import EvidenceForm from '../components/EvidenceForm';
 import { loading, notLoading, errorMsg, successMsg } from '../actions';
-import { } from '../firebaseActions'
+import { uploadUserEvidences } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {}
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleSubmit: (e) => {
+    handleSubmit: (images) => {
       dispatch(loading());
-      console.log(e);
-      dispatch(notLoading());
+      uploadUserEvidences(images)
+      .then(()=> {
+        dispatch(notLoading());
+        dispatch(successMsg('Evidences are updated successfully','/evidencewait'));
+      }).catch(err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
+      })
     },
     dispatchLoading: () => {
       dispatch(loading());

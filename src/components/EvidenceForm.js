@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button, ControlLabel, HelpBlock, Well, Image } from 'react-bootstrap';
-import { hasCurrentUser, userEvidenceUploadedPromise } from '../firebaseActions'
+import { hasCurrentUser, getUserInfoFromDbPromise } from '../firebaseActions'
 
 const FieldGroup = ({ id, label, help, ...props }) => {
   return (
@@ -20,7 +20,7 @@ class EvidenceForm extends React.Component {
     // TODO: redirect when user's evidence collected
     if(!hasCurrentUser()) this.props.history.push('/login');
     this.props.dispatchLoading();
-    userEvidenceUploadedPromise().then(snapshot => {
+    getUserInfoFromDbPromise().then(snapshot => {
       this.props.dispatchNotLoading();
       if(snapshot.val() && snapshot.val().evidenceUploaded)
         this.props.history.push('/evidencewait');
@@ -65,7 +65,7 @@ class EvidenceForm extends React.Component {
       'Evidence #1 (Back Side)',
       'Evidence #2 (Front Side)',
     ]
-    let {imagePreview} = this.state;
+    let {imagePreview, image} = this.state;
     let {handleSubmit} = this.props;
     let $imagePreviewBlock = [];
     for(var i=0; i<3; i++) {
@@ -100,7 +100,7 @@ class EvidenceForm extends React.Component {
         <Button type='submit' 
           onClick={(e)=>{
             e.preventDefault();
-            handleSubmit(e);
+            handleSubmit(image);
           }}>
           Upload Images
         </Button>

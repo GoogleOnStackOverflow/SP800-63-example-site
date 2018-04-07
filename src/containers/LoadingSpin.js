@@ -1,5 +1,4 @@
 import { connect } from 'react-redux'
-import { closeAlert } from '../actions'
 import LoadingModal from '../components/LoadingModal'
 
 const mapStateToProps = (state, ownProps) => {
