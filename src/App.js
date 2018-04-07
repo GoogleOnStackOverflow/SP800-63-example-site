@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
 import { Nav, Navbar, NavItem, NavDropdown, MenuItem } from 'react-bootstrap'
 import AlertModal from './containers/AlertModal'
+import LoadingSpin from './containers/LoadingSpin'
 
 class App extends Component {
   render() {
     return (
       <Navbar>
         <AlertModal/>
+        <LoadingSpin/>
         <Navbar.Header>
           <Navbar.Brand>
             <a href="/">Example Site</a>

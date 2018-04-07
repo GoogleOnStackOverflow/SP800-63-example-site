@@ -9,7 +9,7 @@ class VerifyEmail extends React.Component {
   constructor(props){
     super(props);
     if(!hasCurrentUser()) this.props.history.push('/login');
-    if(currentUserEmailVerified()) this.props.history.push('/evidenceRes');
+    if(currentUserEmailVerified()) this.props.history.push('/evidenceres');
   }
 
   render() {

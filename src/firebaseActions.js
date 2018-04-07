@@ -5,6 +5,10 @@ var app = firebase.initializeApp(firebaseConfig);
 var auth = app.auth();
 var db = app.database();
 
+const createUserDbInfo = () => {
+
+}
+
 export const registerWithEmail = (email, password) => {
   return auth.createUserWithEmailAndPassword(email, password);
 }
@@ -43,4 +47,12 @@ export const removeAccount = () => {
       throw Error('Permission Denied. User not logged in');
     });
   return auth.currentUser.delete();
+}
+
+export const userEvidenceUploadedPromise = () => {
+  if(!auth.currentUser)
+    return new Promise((resolve, reject) => {
+      resolve(undefined);
+    });
+  return db.ref('/users/'+auth.currentUser.uid).once('value')
 }
