@@ -25,8 +25,7 @@ const mapDispatchToProps = dispatch => {
         dispatch(notLoading());
         dispatch(handleValueOnChange('FORM_PWD', ''));
         history.push('/verifymail');
-      })
-      .catch(err => {
+      }, err => {
         dispatch(handleValueOnChange('FORM_PWD', ''));
         dispatch(notLoading());
         if(err.code === 'auth/wrong-password')

@@ -12,7 +12,8 @@ const mapDispatchToProps = dispatch => {
       uploadUserEvidences(images)
       .then(()=> {
         dispatch(notLoading());
-        dispatch(successMsg('Evidences are updated successfully','/evidencewait'));
+        // TODO success nav should be piires
+        dispatch(successMsg('Evidences are updated successfully','/verifypii'));
       }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));

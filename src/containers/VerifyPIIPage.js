@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
-import VerifyEmail from '../components/VerifyEmail';
+import VerifyPII from '../components/VerifyPII';
 import { openCheck, loading, notLoading, errorMsg, successMsg } from '../actions';
-import { sendEmailVerification, logout, removeAccount } from '../firebaseActions'
+import { logout, removeAllCurrentAccountData } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {};
@@ -9,21 +9,6 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    handleResend: () => {
-      dispatch(loading());
-      sendEmailVerification(() => {
-        logout(()=>{
-          dispatch(notLoading());
-          dispatch(successMsg('An verification mail has been sent to your mail address.', '/login'))
-        }).catch(err => {
-          dispatch(notLoading());
-          dispatch(errorMsg(err.message, '/login'));
-        })}
-      ).catch(err => {
-        dispatch(notLoading());
-        dispatch(errorMsg(err.message, '/login'));
-      })
-    },
     handleRelog: (history) => {
       dispatch(loading());
       logout(()=>{
@@ -31,7 +16,7 @@ const mapDispatchToProps = dispatch => {
         history.push('/login')
       }).catch(err => {
         dispatch(notLoading());
-        dispatch(errorMsg(err.message,'/login')); 
+        dispatch(errorMsg(err.message,'/login'));
       })
     },
     handleCancel: () => {
@@ -43,22 +28,28 @@ const mapDispatchToProps = dispatch => {
     },
     handleRemove: () => {
       dispatch(loading());
-      removeAccount()
+      removeAllCurrentAccountData()
       .then(()=> {
         dispatch(notLoading());
-        dispatch(successMsg('Your account and all personal data have been removed', '/login'));
+        dispatch(successMsg('Your account and all personal data are removed', '/login'));
       })
       .catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })
+    },
+    dispatchLoading: () => {
+      dispatch(loading());
+    },
+    dispatchNotLoading: () => {
+      dispatch(notLoading());
     }
   }
 }
 
-const VerifyEmailPage = connect(
+const VerifyPIIPage = connect(
   mapStateToProps,
   mapDispatchToProps
-)(VerifyEmail)
+)(VerifyPII)
  
-export default VerifyEmailPage
+export default VerifyPIIPage

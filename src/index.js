@@ -5,7 +5,7 @@ import { createStore } from 'redux'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import loginStore from './reducers'
-import App from './App'
+import App from './containers/App'
 import registerServiceWorker from './registerServiceWorker'
 import Login from './containers/Login'
 import LoginPasswordForm from './containers/LoginPasswordForm'
@@ -13,6 +13,7 @@ import LoginOTPForm from './containers/LoginOTPForm'
 import RegisterFormPwd from './containers/RegisterFormPwd'
 import VerifyEmailPage from './containers/VerifyEmailPage'
 import EvidenceResForm from './containers/EvidenceResForm'
+import VerifyPIIPage from './containers/VerifyPIIPage'
 
 let store = createStore(loginStore);
 
@@ -27,10 +28,9 @@ ReactDOM.render(
         <Route path="/registerpwd" component={RegisterFormPwd} />
         <Route path="/verifymail" component={VerifyEmailPage} />
         <Route path="/evidenceres" component={EvidenceResForm} />
-        <Route path="/evidencewait" component={Login} />
-      {
-        //<Route path="/service" component={Checkout} onEnter={requireAuth} />
-      }
+      {/*<Route path="/piires" component={PIIResForm} />*/}
+        <Route path="/verifypii" component={VerifyPIIPage} />
+      {/*<Route path="/service" component={PIIResForm} />*/}
       </div>
     </BrowserRouter>
   </Provider>, 
