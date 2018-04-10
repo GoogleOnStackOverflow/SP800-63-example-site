@@ -15,6 +15,7 @@ import VerifyEmailPage from './containers/VerifyEmailPage'
 import EvidenceResForm from './containers/EvidenceResForm'
 import RegisterPIIPage from './containers/RegisterPIIPage'
 import VerifyPIIPage from './containers/VerifyPIIPage'
+import DeliverOTPPage from './containers/DeliverOTPPage'
 
 let store = createStore(loginStore);
 
@@ -31,6 +32,7 @@ ReactDOM.render(
         <Route path="/evidenceres" component={EvidenceResForm} />
         <Route path="/piires" component={RegisterPIIPage} />
         <Route path="/verifypii" component={VerifyPIIPage} />
+        <Route path="/deliverotp" component={DeliverOTPPage} />
       {/*<Route path="/service" component={PIIResForm} />*/}
       </div>
     </BrowserRouter>

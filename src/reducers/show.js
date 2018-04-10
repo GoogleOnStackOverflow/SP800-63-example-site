@@ -1,6 +1,7 @@
 import { LOADING, NOT_LOADING, 
   WEAK_PWD, OPEN_ALERT, CLOSE_ALERT,
-  OPEN_CHECK, CLOSE_CHECK } from '../actions';
+  OPEN_CHECK, CLOSE_CHECK,
+  GEN_OTP, CLEAR_OTP } from '../actions';
 
 const show = (state = {}, action) => {
   switch (action.type) {
@@ -48,6 +49,20 @@ const show = (state = {}, action) => {
         checkMsg: undefined,
         checkNoNav: undefined,
         checkYesNav: undefined
+      }
+    case GEN_OTP: 
+      return {
+        ...state,
+        otpSecret: action.secret,
+        otpSecret32: action.secret32,
+        otpUrl: action.url
+      }
+    case CLEAR_OTP:
+      return {
+        ...state,
+        otpSecret: undefined,
+        otpSecret32: undefined,
+        otpUrl: undefined
       }
     default:
       return state;

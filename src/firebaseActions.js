@@ -1,6 +1,7 @@
-import * as firebase from 'firebase';
-import * as sha256 from 'sha256';
-import { firebaseConfig } from './config';
+import * as firebase from 'firebase'
+import * as sha256 from 'sha256'
+import * as speakeasy from 'speakeasy'
+import { firebaseConfig } from './config'
 import userActions from './userActions'
 
 var app = firebase.initializeApp(firebaseConfig);
@@ -58,10 +59,46 @@ export const removeUserInfo = (email) => {
   return db.ref('/users/'+sha256(email)).set({});
 }
 
+export const setCurrentUserOTP = (credential) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(credential).then(() => {
+      recordUserEvent(userActions.OTP_DELIVERIED).then(() => {
+        resolve();
+      }).catch(err => {
+        reject(err);
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  });
+}
+
+export const resetCurrentUserOTP = (credential) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(credential).then(() => {
+      recordUserEvent(userActions.OTP_RESET).then(() => {
+        resolve();
+      }).catch(err => {
+        reject(err);
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  });
+}
+
 // Auth functions
 // helpers
 export const hasCurrentUser = () => {
   return (auth.currentUser)? true : false;
+}
+
+export const getCurrentUserEmail = () => {
+  return (auth.currentUser)? auth.currentUser.email : undefined;
 }
 
 // Registration
@@ -139,6 +176,27 @@ export const loginWithEmailPwd = (email, password) => {
   }) 
 }
 
+export const loginWithOTP = (otp, email) => {
+  return new Promise((resolve, reject) => {
+    if(!email && !auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'))
+    if(!email)
+      email = auth.currentUser.email;
+    email = encodeURIComponent(email);
+    fetch(`https://us-central1-sp800-63-example-site.cloudfunctions.net/otpverifier?usr=${email}&tkn=${otp}`).then((res)=> {
+      if(res.status === 200) {
+        resolve();
+      } else if(res.status === 400) {
+        reject(Error('OTP verification failed'));
+      } else {
+        reject(Error(res.text()));
+      }
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
 export const logout = (callback) => {
   return auth.signOut().then(()=>{callback()})
 }
@@ -208,4 +266,25 @@ export const removeAllCurrentAccountData = () => {
       throw err;
     })
   });
+}
+
+export const generateOTPKeyAndQRCode = (accountName) => {
+  if(!accountName && auth.currentUser)
+    accountName = auth.currentUser.email;
+  let issuer = 'SP800-63-Example'
+  let secret = speakeasy.generateSecret();
+
+  return [
+    secret.ascii,
+    `https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${encodeURIComponent(secret.base32)}&issuer=${encodeURIComponent(issuer)}`,
+    secret.base32
+  ]
+}
+
+export const verifyOTP = (otp, key) => {
+  console.log(`key: ${key}, otp: ${otp}`);
+  
+  return speakeasy.totp.verify({ 
+    secret: key,
+    token: otp });
 }

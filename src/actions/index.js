@@ -69,3 +69,18 @@ export const closeCheck = () => {
     type: CLOSE_CHECK
   }
 }
+
+export const GEN_OTP = 'GEN_OTP';
+export const CLEAR_OTP = 'CLEAR_OTP';
+
+export const setOTP = (secret, url, secret32) => {
+  return {
+    type: GEN_OTP,
+    secret, url, secret32
+  }
+}
+export const clearOTP = () => {
+  return {
+    type: CLEAR_OTP
+  }
+}
