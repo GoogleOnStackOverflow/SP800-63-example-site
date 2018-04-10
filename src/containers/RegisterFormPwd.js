@@ -14,7 +14,6 @@ const mapDispatchToProps = dispatch => {
     handleOnChange: (name, value) => {
       dispatch(handleValueOnChange(name, value));
     },
-    
     submitOnClick: (state, history) => {
       dispatch(loading());
       registerWithEmail(state['FORM_USR'], state['FORM_REG_PWD'])

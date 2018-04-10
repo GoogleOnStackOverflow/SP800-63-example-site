@@ -23,6 +23,29 @@ export const recordUserEvent = (name, email) => {
   return db.ref('/users/'+sha256(email)+'/events/'+d).set({name});
 }
 
+export const editCurrentUserPII = (data) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    else {
+      let email = auth.currentUser.email;
+      db.ref('/users/'+sha256(email)+'/pii').set(data).then(() => {
+        recordUserEvent(userActions.PII_EDITED).then(() => {
+          db.ref('/users/'+sha256(email)+'/piiVerified').set(false).then(() => {
+            resolve();
+          }).catch(err => {
+            reject(err);
+          })
+        }).catch(err => {
+          reject(err);
+        })
+      }).catch(err => {
+        reject(err);
+      })
+    }
+  })
+}
+
 export const getUserInfoFromDbPromise = () => {
   if(!auth.currentUser)
     return new Promise((resolve, reject) => {
@@ -62,6 +85,37 @@ export const currentUserEmailVerified = () => {
   if(auth.currentUser)
     return auth.currentUser.emailVerified;
   else return false;
+}
+
+export const sendPhoneVerificationCode = (phoneNumber) => {
+  return new Promise((resolve, reject) => {
+    auth.signInWithPhoneNumber('+886'+phoneNumber, window.recaptchaVerifier)
+    .then((confirmationResult) => {
+      resolve(confirmationResult);
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const verifySMSCode = (code, confirmationResult) => {
+  return new Promise((resolve, reject) => {
+    let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
+    auth.currentUser.linkWithCredential(credential).then(function(user) {
+      recordUserEvent(userActions.PHONE_VERIFIED).then(() => {
+        db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified')
+        .set(true).then(() => {
+          resolve();
+        }).catch(err => {
+          reject(err);
+        })
+      }).catch(err => {
+        reject(err);
+      })
+    }, function(error) {
+      reject(error);
+    });
+  })
 }
 
 // Sign in / Sing out

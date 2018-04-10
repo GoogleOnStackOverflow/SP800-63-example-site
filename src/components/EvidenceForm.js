@@ -22,9 +22,8 @@ class EvidenceForm extends React.Component {
     this.props.dispatchLoading();
     getUserInfoFromDbPromise().then(snapshot => {
       this.props.dispatchNotLoading();
-      if(snapshot.val() && snapshot.val().evidenceUploaded)
-        // TODO sould be piires
-        this.props.history.push('/verifypii');
+      if(snapshot.val && snapshot.val() && snapshot.val().evidenceUploaded)
+        this.props.history.push('/piires');
     }) 
 
     this.state = {
