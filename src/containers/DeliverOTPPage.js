@@ -58,6 +58,9 @@ const mapDispatchToProps = dispatch => {
         dispatch(notLoading());
         dispatch(errorMsg('Verification Failed. Invalid OTP'));
       }
+    },
+    dispatchErrMsg: (msg, nav) => {
+      dispatch(errorMsg(msg, nav));
     }
   }
 }

@@ -20,9 +20,10 @@ const mapDispatchToProps = dispatch => {
     
     submitOnClick: (state, history) => {
       dispatch(loading());
-      loginWithOTP(state['FORM_OTP']).then(() => {
+      loginWithOTP(state['FORM_OTP']).then((tkn) => {
         dispatch(notLoading());
         dispatch(handleValueOnChange('FORM_OTP', ''));
+        console.log(tkn);
         history.push('/service');
       }, err => {
         dispatch(notLoading());

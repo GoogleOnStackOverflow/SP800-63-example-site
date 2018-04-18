@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import VerifyPII from '../components/VerifyPII';
 import { openCheck, loading, notLoading, errorMsg, successMsg ,handleValueOnChange } from '../actions';
-import { logout, removeAllCurrentAccountData, getUserInfoFromDbPromise, sendPhoneVerificationCode, verifySMSCode } from '../firebaseActions'
+import { logout, removeAllCurrentAccountData, getCurrentUserPhone, sendPhoneVerificationCode, verifySMSCode } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -51,29 +51,20 @@ const mapDispatchToProps = dispatch => {
     },
     handleSendSMS: (callback) => {
       dispatch(loading());
-      getUserInfoFromDbPromise().then(snapshot => {
-        if(snapshot && snapshot.val() && snapshot.val().pii) {
-          let phoneNum = snapshot.val().pii.Phone;
-          if(!phoneNum){
-            dispatch(notLoading());
-            dispatch(errorMsg('No phone numbers set yet'));
-          }
-          
-          sendPhoneVerificationCode(phoneNum).then(confirmationResult => {
-            dispatch(notLoading());
-            dispatch(successMsg('A confirmation code has been sent to your phone via SMS'));
-            window.confirmationResult = confirmationResult;
-            callback();
-          },err => {
-            dispatch(notLoading());
-            dispatch(errorMsg(err.message));
-          })
-        } else dispatch(errorMsg('An error occurs, please login again'))
-      }).catch(err => {
+      getCurrentUserPhone().then(phoneNum => {
+        sendPhoneVerificationCode(phoneNum).then(confirmationResult => {
+          dispatch(notLoading());
+          dispatch(successMsg('A confirmation code has been sent to your phone via SMS'));
+          window.confirmationResult = confirmationResult;
+          callback();
+        }, err => {
+          dispatch(notLoading());
+          dispatch(errorMsg(err.message));
+        })
+      }, err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })
-      
     },
     handleCodeVerification: (state) => {
       dispatch(loading());
@@ -87,6 +78,9 @@ const mapDispatchToProps = dispatch => {
         dispatch(errorMsg(err.message));
       })
       
+    },
+    dispatchErrMsg: (msg, nav) => {
+      dispatch(errorMsg(msg, nav));
     }
   }
 }

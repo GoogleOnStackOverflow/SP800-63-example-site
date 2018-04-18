@@ -23,6 +23,9 @@ const mapDispatchToProps = dispatch => {
     },
     dispatchNotLoading: () => {
       dispatch(notLoading());
+    },
+    dispatchErrMsg: (msg, nav) => {
+      dispatch(errorMsg(msg, nav));
     }
   }
 }

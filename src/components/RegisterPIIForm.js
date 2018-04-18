@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button, ControlLabel , Col, HelpBlock } from 'react-bootstrap';
 import CheckModal from '../containers/CheckModal'
-import { hasCurrentUser, getUserInfoFromDbPromise } from '../firebaseActions'
-//import { Recaptcha } from '../firebaseActions'
+import { hasCurrentUser, currentUserPIISet } from '../firebaseActions'
 
 const checkID = (ID) => {
   let codes = '0123456789ABCDEFGHJKLMNPQRSTUVXYWZIO'
@@ -21,7 +20,6 @@ const checkID = (ID) => {
     decode[i] = codes.indexOf(ID[i]);
   }
 
-  console.log(decode)
   if(decode[1] !== 1 && decode[1] !== 2)
     return false;
 
@@ -52,7 +50,6 @@ const checkBirthDay = (day) => {
   let m = parseInt(day.substring(4,6), 10);
   let d = parseInt(day.substring(6,8), 10);
 
-  console.log(`Y=${y} M=${m} D=${d}`);
   if(y<(nowYear-200) || y>nowYear)
     return false;
   if(m<1 || m>12)
@@ -71,7 +68,7 @@ const checkBirthDay = (day) => {
   return true;
 }
 
-const userDataFormNames = {
+export const userDataFormNames = {
   FirstName: 'FORM_PII_REG_FNAME',
   LastName: 'FORM_PII_REG_LNAME',
   ID: 'FORM_PII_REG_ID',
@@ -97,12 +94,6 @@ const userDataFromState = (state) => {
   return obj;
 }
 
-const fillAllData = (data, handleOnChange) => {
-  Object.keys(data).forEach(dataName => {
-    handleOnChange(userDataFormNames[dataName], data[dataName]);
-  })
-}
-
 const contentAllFilledAndValidated = (state, formContent) => {
   for(var i=0; i<formContent.length; i++) {
     let contentArr = formContent[i];
@@ -120,21 +111,17 @@ const contentAllFilledAndValidated = (state, formContent) => {
 class RegisterPIIForm extends React.Component {
   constructor(props){
     super(props); 
-    // TODO Nav if user info verifired or deliverd? (with cancelable default)
     if(!hasCurrentUser()) this.props.history.push('/login');
 
     this.props.dispatchLoading();
-    getUserInfoFromDbPromise().then(snapshot => {
+    currentUserPIISet().then(result => {
       this.props.dispatchNotLoading();
-      if(snapshot && snapshot.val())
-        if(snapshot.val().pii && Object.keys(snapshot.val().pii) !== 0){
-          if(!this.props.disableAutoRedirect)
-            this.props.history.push('/verifypii');
-          else {
-            fillAllData(snapshot.val().pii, this.props.handleOnChange);
-          }
-        }  
-    })
+      if(result && !this.props.disableAutoRedirect)
+        this.props.history.push('/verifypii');
+    }, err => {
+      this.props.dispatchNotLoading();
+      this.props.dispatchErrMsg(err);
+    });
   }
 
   render() {
@@ -198,7 +185,8 @@ RegisterPIIForm.propTypes = {
   dispatchNotLoading: PropTypes.func,
   handleRemove: PropTypes.func,
   recapExpired: PropTypes.func,
-  recapPassed: PropTypes.func
+  recapPassed: PropTypes.func,
+  dispatchErrMsg: PropTypes.func
 }
 
 export default withRouter(RegisterPIIForm);

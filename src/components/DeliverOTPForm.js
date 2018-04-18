@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button, ControlLabel , Col, HelpBlock, Image, Thumbnail } from 'react-bootstrap';
-import { hasCurrentUser, getUserInfoFromDbPromise, getCurrentUserEmail } from '../firebaseActions'
+import { hasCurrentUser, currentUserOTPDelivered, getCurrentUserEmail } from '../firebaseActions'
 
 class DeliverOTPForm extends React.Component {
   constructor(props){
@@ -10,10 +10,13 @@ class DeliverOTPForm extends React.Component {
     if(!hasCurrentUser()) this.props.history.push('/login');
     if(!this.props.disableAutoRedirect){
       this.props.dispatchLoading();
-      getUserInfoFromDbPromise().then(snapshot => {
+      currentUserOTPDelivered().then(result => {
         this.props.dispatchNotLoading();
-        if(snapshot && snapshot.val() && snapshot.val().otpCredential)
+        if(result)
           this.props.history.push('/loginotp');
+      }, err => {
+        this.props.dispatchNotLoading();
+        this.props.dispatchErrMsg(err);
       })
     }
     
@@ -117,7 +120,8 @@ DeliverOTPForm.propTypes = {
   generateOnClick: PropTypes.func, 
   verifyOnClick: PropTypes.func,
   dispatchLoading: PropTypes.func,
-  dispatchNotLoading: PropTypes.func
+  dispatchNotLoading: PropTypes.func,
+  dispatchErrMsg: PropTypes.func
 }
 
 export default withRouter(DeliverOTPForm);

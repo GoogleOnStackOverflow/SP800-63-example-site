@@ -21,6 +21,7 @@ yarn-debug.log*
 yarn-error.log*
 
 firebaseFunction/functions/node_modules
+firebaseFunction/functions/*.json
 src/config.js
 src/server.js
 src/verifyUser.js

@@ -9,6 +9,21 @@ var auth = app.auth();
 var db = app.database();
 var storageRef = app.storage().ref();
 
+const fetchFirebaseFunction = (operation, queryObject, fetchOptions) => {
+  const apiurl = 'https://us-central1-sp800-63-example-site.cloudfunctions.net/';
+  let queryArr = Object.keys(queryObject).map(key => {
+    return `${key}=${JSON.stringify(queryObject[key])}`;
+  })
+
+  let fetchurl = `${apiurl}${operation}?`
+  for(let i=0; i < queryArr.length -1; i++){
+    fetchurl += `${queryArr[i]}&`;
+  }
+  fetchurl += queryArr[queryArr.length-1];
+
+  return fetch(fetchurl, fetchOptions);
+}
+
 // DB functions
 export const recordUserEvent = (name, email) => {
   if(!email) {
@@ -24,21 +39,19 @@ export const recordUserEvent = (name, email) => {
   return db.ref('/users/'+sha256(email)+'/events/'+d).set({name});
 }
 
-export const editCurrentUserPII = (data) => {
+export const setCurrentUserPII = (data) => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'));
     else {
-      let email = auth.currentUser.email;
-      db.ref('/users/'+sha256(email)+'/pii').set(data).then(() => {
-        recordUserEvent(userActions.PII_EDITED).then(() => {
-          db.ref('/users/'+sha256(email)+'/piiVerified').set(false).then(() => {
-            resolve();
-          }).catch(err => {
-            reject(err);
-          })
-        }).catch(err => {
-          reject(err);
+      auth.currentUser.getIdToken(true).then(tkn => {
+        fetchFirebaseFunction('setuserpii', {usr: tkn, pii: data}).then((res) => {
+          res.text().then(text => {
+            if(res.status === 200)
+              resolve();
+            else
+              reject(Error(text));
+            })
         })
       }).catch(err => {
         reject(err);
@@ -47,12 +60,27 @@ export const editCurrentUserPII = (data) => {
   })
 }
 
-export const getUserInfoFromDbPromise = () => {
-  if(!auth.currentUser)
-    return new Promise((resolve, reject) => {
-      resolve(undefined);
-    });
-  return db.ref('/users/'+sha256(auth.currentUser.email)).once('value')
+export const currentUserPIISet = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    else 
+      auth.currentUser.getIdToken(true).then(tkn => {
+        fetchFirebaseFunction('userpiiset', {usr: tkn}).then(res => {
+          if(res.status === 200)
+            res.text().then(text => {
+              let result = JSON.parse(text);
+              resolve(result);
+            });
+          else
+            res.text().then(text => {
+              reject(Error(text));  
+            })
+        });
+      }).catch(err => {
+        reject(err);
+      })
+  });
 }
 
 export const removeUserInfo = (email) => {
@@ -63,37 +91,138 @@ export const setCurrentUserOTP = (credential) => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(credential).then(() => {
-      recordUserEvent(userActions.OTP_DELIVERIED).then(() => {
-        resolve();
-      }).catch(err => {
-        reject(err);
-      })
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('setotpcredential', {usr: tkn, credential: encodeURIComponent(credential)}).then(res => {
+        if(res.status === 200)
+          resolve();
+        else
+          res.text().then(text => {
+            reject(Error(text));  
+          })
+      });
     }).catch(err => {
       reject(err);
     })
   });
 }
 
-export const resetCurrentUserOTP = (credential) => {
+export const getCurrentUserPhone = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(credential).then(() => {
-      recordUserEvent(userActions.OTP_RESET).then(() => {
-        resolve();
-      }).catch(err => {
-        reject(err);
+
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('getusrphone', {usr: tkn}).then(res => {
+        res.text().then(result => {
+          if(res.status === 200)
+            resolve(JSON.parse(result));
+          else
+            reject(Error(result));
+        })
       })
     }).catch(err => {
       reject(err);
     })
+  })
+}
+
+export const thePhoneNumberUsed = (phone) => {
+  return new Promise((resolve, reject) => {
+    fetchFirebaseFunction('phoneusedup', {phone}).then(res => {
+      res.text().then(result => {
+        if(res.status === 200)
+          resolve(JSON.parse(result));
+        else
+          reject(Error(result));
+      })
+    })
   });
+}
+
+export const currentUserEvidenceUploaded = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('userevidenceuploaded', {usr: tkn}).then(res => {
+        res.text().then(result => {
+          if(res.status === 200) {
+            resolve(JSON.parse(result));
+          } else {
+            reject(result);
+          }
+        }) 
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const currentUserPIIVerified = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('userpiiverified', {usr: tkn}).then(res => {
+        res.text().then(result => {
+          if(res.status === 200) {
+            resolve(JSON.parse(result));
+          } else {
+            reject(result);
+          }
+        }) 
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const currentUserPhoneVerified = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('userphoneverified', {usr: tkn}).then(res => {
+        res.text().then(result => {
+          if(res.status === 200) {
+            resolve(JSON.parse(result));
+          } else {
+            reject(result);
+          }
+        }) 
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const currentUserOTPDelivered = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('otpdeliverd', {usr: tkn}).then(res => {
+        res.text().then(result => {
+          if(res.status === 200) {
+            resolve(JSON.parse(result));
+          } else {
+            reject(result);
+          }
+        }) 
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
 }
 
 // Auth functions
 // helpers
 export const hasCurrentUser = () => {
+  auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
   return (auth.currentUser)? true : false;
 }
 
@@ -135,9 +264,11 @@ export const sendPhoneVerificationCode = (phoneNumber) => {
   })
 }
 
+// TODO
 export const verifySMSCode = (code, confirmationResult) => {
   return new Promise((resolve, reject) => {
     let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
+
     auth.currentUser.linkWithCredential(credential).then(function(user) {
       recordUserEvent(userActions.PHONE_VERIFIED).then(() => {
         db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified')
@@ -158,43 +289,53 @@ export const verifySMSCode = (code, confirmationResult) => {
 // Sign in / Sing out
 export const loginWithEmailPwd = (email, password) => {
   return new Promise((resolve, reject) => {
-    auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-      recordUserEvent(userActions.PWD_LOGIN_SUCCESS).then(()=> {
-        resolve();
-      })
-    })
-    .catch(err => {
-      if(err.code === 'auth/wrong-password') {
-        recordUserEvent(userActions.PWD_LOGIN_FAILED, email).then(() => {
-          reject(err);
+    db.ref('/users/'+sha256(email)+'/pwdFailedCounter').once('value').then(snapshot => {
+      if(!snapshot || !snapshot.val() || snapshot.val() <= 5)
+        auth.signInWithEmailAndPassword(email, password).then(() => {
+          recordUserEvent(userActions.PWD_LOGIN_SUCCESS).then(()=> {
+            resolve();
+          })
         })
-      } else {
-        reject(err);
-      }
-    })
+        .catch(err => {
+          if(err.code === 'auth/wrong-password') {
+            recordUserEvent(userActions.PWD_LOGIN_FAILED, email).then(() => {
+              reject(err);
+            })
+          } else {
+            reject(err);
+          }
+        })
+      else
+        reject(Error('Permission denied. Wrong password trial limit reached'));
+    }).catch(err => reject(err))
   }) 
 }
 
-export const loginWithOTP = (otp, email) => {
+export const loginWithOTP = (otp) => {
   return new Promise((resolve, reject) => {
-    if(!email && !auth.currentUser)
+    if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'))
-    if(!email)
-      email = auth.currentUser.email;
-    email = encodeURIComponent(email);
-    fetch(`https://us-central1-sp800-63-example-site.cloudfunctions.net/otpverifier?usr=${email}&tkn=${otp}`).then((res)=> {
-      if(res.status === 200) {
-        resolve();
-      } else if(res.status === 400) {
-        reject(Error('OTP verification failed'));
-      } else {
-        reject(Error(res.text()));
-      }
+    auth.currentUser.getIdToken(true).then(tkn => {
+      fetchFirebaseFunction('otpverifier', 
+        {usr: tkn, tkn: otp},
+        {method: 'POST', mode: 'cors'}
+      ).then((res)=> {
+        res.text().then(text => {
+          if(res.status === 200){
+            auth.signInWithCustomToken(text).then(() => {
+              //localStorage.setItem('otptkn', text);
+              resolve();
+            }).catch(err => {
+              reject(err);
+            });
+          } else
+          reject(Error(text))
+        });
+      })
     }).catch(err => {
       reject(err);
     })
-  })
+  });
 }
 
 export const logout = (callback) => {

@@ -1,7 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { withRouter } from "react-router-dom";
-import { Form, FormGroup, FormControl, Button, ControlLabel ,Col } from 'react-bootstrap';
+import React from 'react'
+import PropTypes from 'prop-types'
+import { withRouter } from "react-router-dom"
+import { Form, FormGroup, FormControl, Button, ControlLabel ,Col } from 'react-bootstrap'
+import { hasCurrentUser, logout } from '../firebaseActions'
 
 export const FORM_USR = 'FORM_USR';
 
@@ -11,10 +12,24 @@ export const isEmail = (text) => {
   return (p!==-1 && p!==0 && p!==(text.length-1));
 }
 
-const LoginForm = ({handleOnChange, state, history}) => {
-  return (
-    <Form horizontal>
-        <h4>Login</h4>
+
+class LoginForm extends React.Component {
+  constructor(props){
+    super(props); 
+    if(hasCurrentUser()) logout();
+  }
+
+  componentDidMount() {
+    if(hasCurrentUser()) logout();
+  }
+
+  render() {
+    let {handleOnChange, state, history} = this.props;
+    return (
+      <Form horizontal>
+        <FormGroup controlId="title">
+          <h4>Login</h4>
+        </FormGroup>
         <FormGroup controlId="formHorizontalEmail">
         <Col componentClass={ControlLabel} sm={2}>
           Email
@@ -46,7 +61,8 @@ const LoginForm = ({handleOnChange, state, history}) => {
         </Col>
       </FormGroup>
     </Form>
-  );
+    );
+  }
 }
 
 LoginForm.propTypes = {

@@ -4,15 +4,15 @@ import * as firebase from 'firebase'
 import { withRouter } from "react-router-dom"
 import { Alert, Button, Form, FormGroup, FormControl, ControlLabel , Col, HelpBlock } from 'react-bootstrap'
 import CheckModal from '../containers/CheckModal'
-import { hasCurrentUser, getUserInfoFromDbPromise } from '../firebaseActions'
+import { hasCurrentUser, currentUserPIIVerified, currentUserPhoneVerified } from '../firebaseActions'
 
 class VerifyPhoneNum extends React.Component {
   constructor(props){
     super(props);
     this.state = {sendEnabled: false, codeEnabled: false};
     this.setCodeEnable.bind(this);
+    this.setSendEnabled.bind(this);
   }
-
 
   componentDidMount() {
     let setSendEnabled = enable => this.setState({sendEnabled: enable});
@@ -31,6 +31,10 @@ class VerifyPhoneNum extends React.Component {
     });
   }
 
+  setSendEnabled(enable) {
+    this.setState({sendEnabled: enable});
+  }
+
   setCodeEnable(enable) {
     this.setState({codeEnabled: enable});
   }
@@ -44,7 +48,12 @@ class VerifyPhoneNum extends React.Component {
         <p>
           <Button 
             disabled={!this.state.sendEnabled}
-            onClick={()=> {handleSendSMS(()=>this.setCodeEnable(true))}}>
+            onClick={()=> {
+              handleSendSMS(()=>{
+                this.setCodeEnable(true);
+                this.setSendEnabled(false);
+              });
+            }}>
             Send me the code
           </Button>
         </p>
@@ -81,24 +90,28 @@ class VerifyPII extends React.Component {
   constructor(props){
     super(props);
 
-    this.state = {showPhoneVerifier: false};
+    this.state = {showPhoneVerifier: true};
     if(!hasCurrentUser()) this.props.history.push('/login');
     this.props.dispatchLoading();
-    getUserInfoFromDbPromise().then(snapshot => {
+    currentUserPIIVerified().then(result => {
       this.props.dispatchNotLoading();
-      if(snapshot && snapshot.val() && snapshot.val().piiVerified)
+      if(result)
         this.props.history.push('/deliverotp');
-      if(snapshot && snapshot.val())
-        this.state.showPhoneVerifier = snapshot.val().userPhoneVerified? false : true;
+    }, err => {
+      this.props.dispatchNotLoading();
+      this.props.dispatchErrMsg(err);
     })
   }
 
   componentDidMount() {
     this.props.dispatchLoading();
-    getUserInfoFromDbPromise().then(snapshot => {
+    currentUserPhoneVerified().then(result => {
       this.props.dispatchNotLoading();
-      if(snapshot && snapshot.val() && snapshot.val().userPhoneVerified)
+      if(result)
         this.setState({showPhoneVerifier: false});
+    }, err => {
+      this.props.dispatchNotLoading();
+      this.props.dispatchErrMsg(err);
     })
   }
 
@@ -142,7 +155,8 @@ VerifyPII.propTypes = {
   handleRelog: PropTypes.func,
   handleSendSMS: PropTypes.func,
   handleCodeVerification: PropTypes.func,
-  handleOnChange: PropTypes.func
+  handleOnChange: PropTypes.func,
+  dispatchErrMsg: PropTypes.func
 }
 
 export default withRouter(VerifyPII);

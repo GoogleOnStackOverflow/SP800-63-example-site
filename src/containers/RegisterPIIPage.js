@@ -1,7 +1,8 @@
 import { connect } from 'react-redux';
 import RegisterPIIForm from '../components/RegisterPIIForm';
+import { userDataFormNames } from '../components/RegisterPIIForm';
 import { handleValueOnChange, loading, notLoading, errorMsg, successMsg, openCheck } from '../actions';
-import { removeAllCurrentAccountData, editCurrentUserPII } from '../firebaseActions'
+import { removeAllCurrentAccountData, setCurrentUserPII, thePhoneNumberUsed } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -25,11 +26,22 @@ const mapDispatchToProps = dispatch => {
     
     submitOnClick: (state, userInfoGenerator, history) => {
       dispatch(loading());
-      editCurrentUserPII(userInfoGenerator(state)).then(()=> {
-        dispatch(notLoading());
-        clearAllPIIFormData(state, dispatch);
-        dispatch(successMsg('Personal data updated', '/verifypii'))
+      thePhoneNumberUsed(state[userDataFormNames.Phone]).then((used) => {
+        if(used){
+          dispatch(notLoading());
+          dispatch(errorMsg('The phone number is used for another account'));
+        } else {
+          setCurrentUserPII(userInfoGenerator(state)).then(()=> {
+            dispatch(notLoading());
+            clearAllPIIFormData(state, dispatch);
+            dispatch(successMsg('Personal data updated', '/verifypii'))
+          }, err => {
+            dispatch(notLoading());
+            dispatch(errorMsg(err.message));
+          })
+        }
       }, err => {
+        dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })
     },
@@ -58,6 +70,9 @@ const mapDispatchToProps = dispatch => {
     },
     dispatchNotLoading: () => {
       dispatch(notLoading());
+    },
+    dispatchErrMsg: (msg, nav) => {
+      dispatch(errorMsg(msg, nav));
     }
   }
 }

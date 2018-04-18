@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button, ControlLabel, HelpBlock, Well, Image } from 'react-bootstrap';
-import { hasCurrentUser, getUserInfoFromDbPromise } from '../firebaseActions'
+import { hasCurrentUser, currentUserEvidenceUploaded } from '../firebaseActions'
 
 const FieldGroup = ({ id, label, help, ...props }) => {
   return (
@@ -17,13 +17,16 @@ const FieldGroup = ({ id, label, help, ...props }) => {
 class EvidenceForm extends React.Component {
   constructor(props){
     super(props); 
-    // TODO: redirect when user's evidence collected
+    
     if(!hasCurrentUser()) this.props.history.push('/login');
     this.props.dispatchLoading();
-    getUserInfoFromDbPromise().then(snapshot => {
+    currentUserEvidenceUploaded().then(result => {
       this.props.dispatchNotLoading();
-      if(snapshot.val && snapshot.val() && snapshot.val().evidenceUploaded)
+      if(result)
         this.props.history.push('/piires');
+    }, err => {
+      this.props.dispatchNotLoading();
+      this.props.dispatchErrMsg(err);
     }) 
 
     this.state = {
@@ -112,7 +115,8 @@ class EvidenceForm extends React.Component {
 EvidenceForm.propTypes = {
   handleSubmit: PropTypes.func,
   dispatchLoading: PropTypes.func,
-  dispatchNotLoading: PropTypes.func
+  dispatchNotLoading: PropTypes.func,
+  dispatchErrMsg: PropTypes.func
 }
 
 export default withRouter(EvidenceForm);
