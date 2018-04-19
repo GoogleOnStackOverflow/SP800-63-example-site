@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import ReLoginForm from '../components/ReLoginForm';
 import { handleValueOnChange, loading, notLoading, errorMsg, successMsg, cancelReauth } from '../actions';
-import { reauthCurrentUser, logout } from '../firebaseActions'
+import { reauthCurrentUser } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -27,8 +27,7 @@ const mapDispatchToProps = dispatch => {
       }, err => {
         dispatch(notLoading());
         dispatch(cancelReauth());
-        dispatch(logout());
-        dispatch(errorMsg(`We signed you out for security concerns. Please try to login again. Error Message: ${err.message}`, '/login'));
+        dispatch(errorMsg(err.message));
       })
     },
     handleCancel: () => {

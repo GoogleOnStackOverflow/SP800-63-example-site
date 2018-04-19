@@ -54,6 +54,26 @@ const verifyTknAndGetShaEmail = (tkn) => {
   });
 }
 
+const checkOTPQualificationThenCredential = (usr, otp) => {
+  return new Promise((resolve, reject) => {
+    db.ref(`/users/${usr}`).once('value').then(snapshot => {
+      if(!snapshot || !snapshot.val())
+        reject(Error('User not found.'));
+      if(snapshot.val().otpFailedCounter && snapshot.val.otpFailedCounter >5)
+        reject(Error('OTP Wrong trial limit reached. Please reset your account to resolve this'));
+      let d = new Date();
+
+      if(snapshot.val().lastOTP){
+        if(snapshot.val().lastOTP === otp)
+          reject(Error('The OTP is used just right now. Please wait for the next one'));
+      }
+      resolve(snapshot.val().otpCredential)
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
 // Firebase Functions
 // OTP Verifier
 exports.otpverifier = functions.https.onRequest((req, res) => {
@@ -63,58 +83,54 @@ exports.otpverifier = functions.https.onRequest((req, res) => {
 
   if(!req.query.usr || !req.query.tkn)
     res.status(500).send('Bad Request');
-  let d = new Date();
   
+  let otp = JSON.parse(req.query.tkn)
+  // verify email/pwd tkn
   verifyTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
-    // First check the failed times, which should be less than 5
-    db.ref(`/users/${email}/otpFailedCounter`).once('value').then(failedSnapshot => {
-      if(!failedSnapshot || !failedSnapshot.val() || failedSnapshot.val() <= 5) {
-        // Then check if the otp has been successfully login just now, if yes, block it
-        db.ref(`/users/${email}/lastOTPLoginTime`).once('value').then(loginTimeSnapShot => {
-          let timer = 60000;
-          if(loginTimeSnapShot && loginTimeSnapShot.val()) { 
-            let lastLoginTime = new Date(loginTimeSnapShot.val());
-            timer = d - lastLoginTime;
-          }
 
-          if((timer/1000) > 30) {
-            // Get the user credential and verify the OTP
-            db.ref(`/users/${email}/otpCredential`).once('value').then((snapshot) => {
-              if(snapshot && snapshot.val()){
-                if(speakeasy.totp.verify({secret: snapshot.val(), token: JSON.parse(req.query.tkn)})) {
-                  d = new Date();
-                  db.ref(`/users/${email}/events/${d}`).set({name: 'OTP_LOGIN_SUCCESS'}).then(() => {
-                    signTkn(JSON.parse(req.query.usr), {
-                      otpVerified: true,
-                      dbUsrID: email,
-                    }).then(tkn => {
-                      return res.status(200).send(JSON.stringify(tkn));
-                    }).catch(err => {
-                      return res.status(500).send(err.message);
-                    })
-                  });
-                } else {
-                  d = new Date();
-                  db.ref(`/users/${email}/events/${d}`).set({name: 'OTP_LOGIN_FAILED'}).then(()=> {
-                    return res.status(400).send('OTP Verification Failed (Invalid OTP)');  
-                  });
-                }
-              } else {
-                return res.status(500).send('User not found');
-              }
+    // check not using the same otp and get the credential
+    checkOTPQualificationThenCredential(email, otp).then(credential => {
+      // verify the otp
+      if(speakeasy.totp.verify({secret: Buffer.from(credential, 'ascii'), token: otp})) {
+        // if otp verification successed, record the event
+        let d = new Date();
+        db.ref(`/users/${email}/events/${d}`).set({name: 'OTP_LOGIN_SUCCESS'}).then(() => {
+          db.ref(`/users/${email}/lastOTP`).set(otp).then(() => {
+            // sign the otp token to the user
+            signTkn(JSON.parse(req.query.usr), {
+              otpVerified: true,
+              dbUsrID: email,
+
+              // sign success, response the token
+            }).then(tkn => {
+              return res.status(200).send(JSON.stringify(tkn));
+
+              // sign failed
             }).catch(err => {
               return res.status(500).send(err.message);
             })
-          } else {
-            return res.status(400).send('This OTP is used to login just right now. Please wait at least 30 secs until next trial.');
-          }
+
+          // event recording error
+          }).catch(err => {
+            return res.status(500).send(err.message);
+          })
+        }).catch(err => {
+          return res.status(500).send(err.message);
         })
+
+      // OTP verification failed
       } else {
-        return res.status(400).send('Failed trial limit reached, your account is temperary disabled')
+        return res.status(400).send('OTP Verification Failed (Invalid OTP)');  
       }
+
+    // OTP qualification failed
+    }, err => {
+      return res.status(400).send(err.message);
     })
+
+  // email/pwd tkn verification failed
   }, err => {
-    return res.status(500).send(err.message);
+    return res.status(400).send(err.message);
   })
 });
 
@@ -392,10 +408,7 @@ exports.manageThrottling = functions.database.ref('/users/{userID}/events/{event
     }
 
     if(snap.val().name === 'OTP_LOGIN_SUCCESS'){
-      db.ref(`/users/${context.params.userID}/otpFailedCounter`).set(0).then(() => {
-        db.ref(`/users/${context.params.userID}/lastOTPLoginTime`).set(context.params.eventTime)
-        .then(()=>resolve()).catch(err => reject(err));
-      }).catch(err => reject(err));
+      db.ref(`/users/${context.params.userID}/otpFailedCounter`).set(0).then(() => resolve()).catch(err => reject(err));
     }
   })
 })

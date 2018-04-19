@@ -28,7 +28,7 @@ class LoginForm extends React.Component {
     return (
       <Form horizontal>
         <FormGroup controlId="title">
-          <h4>Login</h4>
+          <h4 align='middle'>Login</h4>
         </FormGroup>
         <FormGroup controlId="formHorizontalEmail">
         <Col componentClass={ControlLabel} sm={2}>

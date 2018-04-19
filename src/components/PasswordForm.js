@@ -18,7 +18,9 @@ class PasswordForm extends React.Component {
     const {title, placeHolder, formName, state, handleOnChange, submitOnClick, cancelOnClick, history} = this.props
     return (
       <Form horizontal>
-        <h4>Login</h4>
+        <FormGroup controlId="title">
+          <h4 align='middle'>Login</h4>
+        </FormGroup>
         <FormGroup controlId="formHorizontalPassword">
           <Col componentClass={ControlLabel} sm={2}>
             {title}

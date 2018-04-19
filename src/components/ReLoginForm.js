@@ -8,8 +8,10 @@ const ReLoginForm = ({handleOnChange, state, handleCancel, handleReAuth, history
     <Modal show={successRoute? true : false} onHide={()=> {handleCancel()}}>
       <Form horizontal>
         <FormGroup>
-          <h4>Re-authenticate</h4>
-          <p>Please re-auth before furthur operations</p>
+          <Col align='middle'>
+            <h4>Re-authenticate</h4>
+            <p>Please re-auth before furthur operations</p>
+          </Col>
         </FormGroup>
         <FormGroup controlId="formHorizontalEmail">
           <Col componentClass={ControlLabel} sm={2}>
@@ -49,7 +51,7 @@ const ReLoginForm = ({handleOnChange, state, handleCancel, handleReAuth, history
             </Button>
             <Button 
               onClick={()=>{handleReAuth(state, history, successRoute)}}
-              disabled={state['FORM_PWD'] && state['FORM_OTP']}>
+              disabled={!state['FORM_PWD'] || !state['FORM_OTP']}>
               Re-auth me
             </Button>
           </Col>

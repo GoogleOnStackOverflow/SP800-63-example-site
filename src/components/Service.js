@@ -9,7 +9,7 @@ import { userDataFormNames } from './RegisterPIIForm'
 
 const FormGroupComponent = ({state, Name, FormName, discrebtion}) => {
   return (
-    <FormGroup 
+    <FormGroup readOnly
       controlId={Name}>
       <Col componentClass={ControlLabel} sm={2}>        
         <p>{Name}</p>
@@ -57,13 +57,13 @@ class Service extends React.Component {
             state = {state}
             Name = 'First Name'
             FormName = {userDataFormNames['FirstName']}
-            discrebtion = '名'
+            discrebtion = '名 (To change name, you would have to provide new evidences)'
           />
           <FormGroupComponent
             state = {state}
             Name = 'First Name'
             FormName = {userDataFormNames['LastName']}
-            discrebtion = '姓'
+            discrebtion = '姓 (To change name, you would have to provide new evidences)'
           />
           <FormGroupComponent
             state = {state}

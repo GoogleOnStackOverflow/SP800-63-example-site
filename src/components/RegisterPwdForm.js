@@ -14,7 +14,9 @@ class RegisterPasswordForm extends React.Component {
     const {state, handleOnChange, submitOnClick, cancelOnClick, history} = this.props
     return (
       <Form horizontal>
-        <h4>Login</h4>
+        <FormGroup controlId="title">
+          <h4 align='middle'>Sign On</h4>
+        </FormGroup>
         <FormGroup 
           validationState={state['FORM_REG_PWD'] && state['FORM_REG_PWD'].length<8?'error':'success'}
           controlId="formHorizontalPassword">

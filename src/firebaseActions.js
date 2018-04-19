@@ -389,20 +389,17 @@ export const reauthCurrentUser = (pwd, otp) => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'))
-    let cred = auth.EmailAuthProvider.credential(auth.currentUser.email, pwd).catch(err => {
-      reject(err);
-    });
-    if(cred) {
-      auth.signInWithCredential(cred).then(() => {
-        loginWithOTP(otp).then(() => {
-          resolve();
-        }, err => {
-          reject(err);
-        })
-      }).catch(err => {
+    loginWithEmailPwd(auth.currentUser.email, pwd).then(() => {
+      loginWithOTP(otp).then(() => {
+        resolve();
+      }, err => {
         reject(err);
       })
-    }
+    },err => {
+      reject(err);
+    }).catch(err => {
+      reject(err);
+    });
   });
 }
 
