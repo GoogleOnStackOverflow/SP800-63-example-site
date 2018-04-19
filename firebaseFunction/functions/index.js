@@ -87,7 +87,6 @@ exports.otpverifier = functions.https.onRequest((req, res) => {
                     signTkn(JSON.parse(req.query.usr), {
                       otpVerified: true,
                       dbUsrID: email,
-                      logTime: d
                     }).then(tkn => {
                       return res.status(200).send(JSON.stringify(tkn));
                     }).catch(err => {

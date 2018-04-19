@@ -1,7 +1,8 @@
 import { LOADING, NOT_LOADING, 
   WEAK_PWD, OPEN_ALERT, CLOSE_ALERT,
   OPEN_CHECK, CLOSE_CHECK,
-  GEN_OTP, CLEAR_OTP } from '../actions';
+  GEN_OTP, CLEAR_OTP,
+  FIRE_REAUTH, CANCEL_REAUTH} from '../actions';
 
 const show = (state = {}, action) => {
   switch (action.type) {
@@ -63,6 +64,16 @@ const show = (state = {}, action) => {
         otpSecret: undefined,
         otpSecret32: undefined,
         otpUrl: undefined
+      }
+    case FIRE_REAUTH:
+      return {
+        ...state,
+        reauthRoute: action.reauthRoute
+      }
+    case CANCEL_REAUTH:
+      return {
+        ...state,
+        reauthRoute: undefined
       }
     default:
       return state;

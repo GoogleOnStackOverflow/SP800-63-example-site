@@ -84,3 +84,19 @@ export const clearOTP = () => {
     type: CLEAR_OTP
   }
 }
+
+export const FIRE_REAUTH = 'FIRE_REAUTH';
+export const CANCEL_REAUTH = 'CANCEL_REAUTH';
+
+export const reauthUser = (reauthRoute) => {
+  return {
+    type: FIRE_REAUTH,
+    reauthRoute
+  }
+}
+
+export const cancelReauth = () => {
+  return {
+    type: CANCEL_REAUTH
+  }
+}

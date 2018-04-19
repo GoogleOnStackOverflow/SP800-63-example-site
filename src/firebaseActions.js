@@ -60,6 +60,24 @@ export const setCurrentUserPII = (data) => {
   })
 }
 
+export const editCurrentUserPII = (data) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    else {
+      Promise.all(Object.keys(data).map(dataName => {
+        return db.ref(`/users/${sha256(auth.currentUser.email)}/pii/${dataName}`).set(data[dataName]);
+      })).then(() => {
+        resolve();
+      },err => {
+        reject(err);
+      }).catch(err => {
+        reject(err);
+      })
+    }
+  })
+}
+
 export const currentUserPIISet = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
@@ -81,6 +99,26 @@ export const currentUserPIISet = () => {
         reject(err);
       })
   });
+}
+
+export const getUserPII = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser){
+      logout();
+      reject(Error('Permission Denied'))
+    }
+    
+    auth.currentUser.getToken(false).then(tkn => {
+      console.log(tkn);
+    })
+
+    db.ref(`/users/${sha256(auth.currentUser.email)}/pii`).once('value').then(snapshot => {
+      resolve(snapshot.val());
+    }).catch(err => {
+      logout();
+      reject(err);
+    });
+  })
 }
 
 export const removeUserInfo = (email) => {
@@ -264,7 +302,6 @@ export const sendPhoneVerificationCode = (phoneNumber) => {
   })
 }
 
-// TODO
 export const verifySMSCode = (code, confirmationResult) => {
   return new Promise((resolve, reject) => {
     let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
@@ -322,12 +359,15 @@ export const loginWithOTP = (otp) => {
       ).then((res)=> {
         res.text().then(text => {
           if(res.status === 200){
-            auth.signInWithCustomToken(text).then(() => {
-              //localStorage.setItem('otptkn', text);
-              resolve();
+            auth.signOut().then(() => {
+              auth.signInWithCustomToken(text).then(() => {
+                resolve();
+              }).catch(err => {
+                reject(err);
+              });
             }).catch(err => {
               reject(err);
-            });
+            })
           } else
           reject(Error(text))
         });
@@ -339,7 +379,31 @@ export const loginWithOTP = (otp) => {
 }
 
 export const logout = (callback) => {
-  return auth.signOut().then(()=>{callback()})
+  return auth.signOut().then(()=>{
+    if(callback)
+      callback();
+  })
+}
+
+export const reauthCurrentUser = (pwd, otp) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'))
+    let cred = auth.EmailAuthProvider.credential(auth.currentUser.email, pwd).catch(err => {
+      reject(err);
+    });
+    if(cred) {
+      auth.signInWithCredential(cred).then(() => {
+        loginWithOTP(otp).then(() => {
+          resolve();
+        }, err => {
+          reject(err);
+        })
+      }).catch(err => {
+        reject(err);
+      })
+    }
+  });
 }
 
 // Remove
