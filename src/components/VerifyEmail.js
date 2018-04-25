@@ -13,7 +13,7 @@ class VerifyEmail extends React.Component {
   }
 
   render() {
-    const {handleCancel, handleRemove, handleResend, handleRelog, history} = this.props
+    const {handleCancel, handleRemove, handleResend, handleRelog} = this.props
     return (
       <Alert bsStyle="warning">
         <CheckModal cancelOnClick={()=>{}} okOnClick={handleRemove} />
@@ -32,7 +32,7 @@ class VerifyEmail extends React.Component {
         </p>
         <p>If you have verified your address, please try to login again</p>
         <p>
-          <Button onClick={()=>{handleRelog(history)}}>Login again</Button>
+          <Button onClick={handleRelog}>Login again</Button>
         </p>
       </Alert>
     );

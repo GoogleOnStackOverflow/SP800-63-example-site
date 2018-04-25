@@ -42,7 +42,10 @@ class Service extends React.Component {
     })
   }
 
-  componentDidMount() {
+  componentWillUnmount() {
+    Object.keys(userDataFormNames).forEach(name => {
+      this.props.handleOnChange(userDataFormNames[name], '');
+    })
   }
 
   render() {

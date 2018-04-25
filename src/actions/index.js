@@ -2,11 +2,18 @@ export const LOADING = 'LOADING';
 export const NOT_LOADING = 'NOT_LOADING';
 
 export const HANDLE_VALUE_ONCHANGE = 'HANDLE_VALUE_ONCHANGE';
+export const CLEAR_ALL_VALUE = 'CLEAR_ALL_VALUE';
 
 export const handleValueOnChange = (formName, value) => {
   return {
     type: HANDLE_VALUE_ONCHANGE,
     formName, value
+  }
+}
+
+export const clearAllForm = () => {
+  return {
+    type: CLEAR_ALL_VALUE
   }
 }
 
@@ -98,5 +105,11 @@ export const reauthUser = (reauthRoute) => {
 export const cancelReauth = () => {
   return {
     type: CANCEL_REAUTH
+  }
+}
+
+export const resetIdleTimer = () => {
+  return {
+    type: 'RESET_IDLE'
   }
 }

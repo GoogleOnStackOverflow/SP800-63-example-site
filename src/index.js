@@ -25,6 +25,7 @@ import UpdateOTPPage from './containers/UpdateOTPPage'
 import KBVResetForm from './containers/KBVResetForm'
 import ResetEmail from './containers/ResetEmail'
 import ResetPhone from './containers/ResetPhone'
+import ResetCredentialPage from './containers/ResetCredentialPage'
 
 let store = createStore(loginStore);
 
@@ -51,6 +52,7 @@ ReactDOM.render(
         <Route path="/resetaccount" component={KBVResetForm} />
         <Route path="/resetemail" component={ResetEmail} />
         <Route path="/resetphone" component={ResetPhone} />
+        <Route path="/resetcredentials" component={ResetCredentialPage} />
       </div>
     </BrowserRouter>
   </Provider>, 

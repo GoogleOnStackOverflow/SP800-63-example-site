@@ -33,7 +33,6 @@ const mapDispatchToProps = dispatch => {
     handleSendSMS: (callback) => {
       dispatch(loading());
       getCurrentUserPhone().then(phoneNum => {
-        console.log(phoneNum);
         sendPhoneVerificationCode(phoneNum).then(confirmationResult => {
           dispatch(notLoading());
           dispatch(successMsg('A confirmation code has been sent to your phone via SMS'));

@@ -50,7 +50,7 @@ export const setCurrentUserPII = (data) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'));
     else {
-      auth.currentUser.getIdToken(true).then(tkn => {
+      auth.currentUser.getIdToken(false).then(tkn => {
         fetchFirebaseFunction('setuserpii', {usr: tkn, pii: data}).then((res) => {
           res.text().then(text => {
             if(res.status === 200)
@@ -89,7 +89,7 @@ export const currentUserPIISet = () => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'));
     else 
-      auth.currentUser.getIdToken(true).then(tkn => {
+      auth.currentUser.getIdToken(false).then(tkn => {
         fetchFirebaseFunction('userpiiset', {usr: tkn}).then(res => {
           if(res.status === 200)
             res.text().then(text => {
@@ -117,7 +117,7 @@ export const getUserPII = () => {
     db.ref(`/users/${sha256(auth.currentUser.email)}/pii`).once('value').then(snapshot => {
       resolve(snapshot.val());
     }).catch(err => {
-      logout();
+      //logout();
       reject(err);
     });
   })
@@ -131,7 +131,7 @@ export const setCurrentUserOTP = (credential) => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('setotpcredential', {usr: tkn, credential: encodeURIComponent(credential)}).then(res => {
         if(res.status === 200)
           resolve();
@@ -151,7 +151,7 @@ export const getCurrentUserPhone = () => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
 
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('getusrphone', {usr: tkn}).then(res => {
         res.text().then(result => {
           if(res.status === 200)
@@ -183,7 +183,7 @@ export const currentUserEvidenceUploaded = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('userevidenceuploaded', {usr: tkn}).then(res => {
         res.text().then(result => {
           if(res.status === 200) {
@@ -203,7 +203,7 @@ export const currentUserPIIVerified = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('userpiiverified', {usr: tkn}).then(res => {
         res.text().then(result => {
           if(res.status === 200) {
@@ -223,7 +223,7 @@ export const currentUserPhoneVerified = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('userphoneverified', {usr: tkn}).then(res => {
         res.text().then(result => {
           if(res.status === 200) {
@@ -243,7 +243,7 @@ export const currentUserOTPDelivered = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('otpdeliverd', {usr: tkn}).then(res => {
         res.text().then(result => {
           if(res.status === 200) {
@@ -263,11 +263,6 @@ export const currentUserOTPDelivered = () => {
 // helpers
 export const hasCurrentUser = () => {
   auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
-  if(auth.currentUser)
-    auth.currentUser.getIdToken().then(tkn => {
-      console.log(tkn);
-    })
-  
   return (auth.currentUser)? true : false;
 }
 
@@ -528,7 +523,7 @@ export const loginWithOTP = (otp) => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'))
-    auth.currentUser.getIdToken(true).then(tkn => {
+    auth.currentUser.getIdToken(false).then(tkn => {
       fetchFirebaseFunction('otpverifier', 
         {usr: tkn, tkn: otp},
         {method: 'POST', mode: 'cors'}
@@ -660,8 +655,6 @@ export const generateOTPKeyAndQRCode = (accountName) => {
 }
 
 export const verifyOTP = (otp, key) => {
-  console.log(`key: ${key}, otp: ${otp}`);
-  
   return speakeasy.totp.verify({ 
     secret: key,
     token: otp });

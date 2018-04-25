@@ -57,8 +57,11 @@ const verifyTknAndGetShaEmail = (tkn) => {
 const verifyTknAndCheckPermission = (tkn) => {
   return new Promise((resolve, reject) => {
     admin.auth().verifyIdToken(tkn).then(decodedToken => {
-      console.log(decodedToken)
-      resolve(decodedToken);
+      // TODO check the content of each permission
+      console.log(decodedToken.firebase.sign_in_provider);
+      if(decodedToken.firebase.sign_in_provider === 'phone')
+        resolve(true);
+      else resolve(false);
     }, err => {
       reject(err);
     })
@@ -374,17 +377,37 @@ exports.setotpcredential = functions.https.onRequest((req, res) => {
   if(!req.query.usr || !req.query.credential)
     return res.status(400).send('Bad Request');
 
-  // TODO 
-  // should check the tkn permission
-  verifyTknAndCheckPermission(JSON.parse(req.query.usr));
-  verifyTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
-    db.ref(`/users/${email}/otpCredential`).set(JSON.parse(decodeURIComponent(req.query.credential))).then(() => {
-      return res.status(200).send('OK');
-    }).catch(err => {
-      return res.status(500).send(err.message);
+  // First check the permission
+  // Recovering account should login by phone provider before this action
+  // For a new account the otp credential should be null in the database
+  // For full permission accounts, the otp credential could be set directly from the client
+  verifyTknAndCheckPermission(JSON.parse(req.query.usr)).then(result => {
+    verifyTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
+      db.ref(`/users/${email}`).once('value').then(snapshot => {
+        // if it's a reset account request
+        if((result && snapshot.val() && snapshot.val().underRecover)
+          // or it's a set new account credential request
+          || (!result && snapshot.val() && !snapshot.val().otpCredential)) {
+          db.ref(`/users/${email}/otpCredential`).set(JSON.parse(decodeURIComponent(req.query.credential))).then(() => {
+            return res.status(200).send('OK');
+          }).catch(err => {
+            return res.status(500).send(err.message);
+          })
+        } else {
+          // Permission denied
+          return res.status(400).send('Permission Denied (OTP credential set). Please reauthenticate your account using your last OTP credential or start an account recovery process.');
+        }
+      }).catch(err => {
+        // Internal error
+        return res.status(500).send(err.message);
+      })
+    }, err => {
+      // Cannot get a mail from the tkn
+      return res.status(400).send('User not found');
     })
   }, err => {
-    return res.status(400).send('User not found');
+    // Cannot verify the tkn
+    return res.status(400).send('Permission Denied (Invalid JWT). Please login first before this action.');
   })
 });
 

@@ -116,7 +116,7 @@ class VerifyPII extends React.Component {
   }
 
   render() {
-    const {state, handleCancel, handleRemove, handleRelog, handleSendSMS, handleCodeVerification, handleOnChange, history} = this.props
+    const {state, handleCancel, handleRemove, handleRelog, handleSendSMS, handleCodeVerification, handleOnChange} = this.props
 
     return (
       <div>
@@ -134,7 +134,7 @@ class VerifyPII extends React.Component {
           </p>
           <p>If you have been notified passed in verification, please try to </p>
           <p>
-            <Button onClick={()=>{handleRelog(history)}}>Login again</Button>
+            <Button onClick={handleRelog}>Login again</Button>
           </p>
         </Alert>
         {this.state.showPhoneVerifier?<VerifyPhoneNum

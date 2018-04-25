@@ -4,10 +4,12 @@ import { Nav, Navbar, NavItem, NavDropdown, MenuItem } from 'react-bootstrap'
 import { withRouter } from "react-router-dom"
 import AlertModal from '../containers/AlertModal'
 import LoadingSpin from '../containers/LoadingSpin'
+import IdleModal from '../containers/IdleModal'
 
 const AppNavBar = ({isLogin, handleLogOnClick, history, location})=> {
   return (
     <Navbar>
+      <IdleModal/>
       <AlertModal/>
       <LoadingSpin/>
       <Navbar.Header>

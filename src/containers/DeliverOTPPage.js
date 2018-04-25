@@ -52,7 +52,6 @@ const mapDispatchToProps = dispatch => {
       if(state && state['FORM_OTP_ACCOUNT'])
         account = state['FORM_OTP_ACCOUNT'];
       let result = generateOTPKeyAndQRCode(account);
-      console.log(result);
       dispatch(setOTP(result[0], result[1], result[2]));
       dispatch(notLoading());
     },

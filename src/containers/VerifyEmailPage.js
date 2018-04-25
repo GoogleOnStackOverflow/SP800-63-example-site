@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import VerifyEmail from '../components/VerifyEmail';
-import { openCheck, loading, notLoading, errorMsg, successMsg } from '../actions';
+import { openCheck, loading, notLoading, errorMsg, successMsg, clearAllForm } from '../actions';
 import { sendEmailVerification, logout, removeAccount } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
@@ -24,11 +24,12 @@ const mapDispatchToProps = dispatch => {
         dispatch(errorMsg(err.message, '/login'));
       })
     },
-    handleRelog: (history) => {
+    handleRelog: () => {
       dispatch(loading());
       logout(()=>{
+        dispatch(clearAllForm());
         dispatch(notLoading());
-        history.push('/login')
+        dispatch(successMsg('Successfully signed out', '/login'));
       }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message,'/login')); 

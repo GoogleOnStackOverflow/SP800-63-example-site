@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import VerifyPII from '../components/VerifyPII';
-import { openCheck, loading, notLoading, errorMsg, successMsg ,handleValueOnChange } from '../actions';
+import { openCheck, loading, notLoading, errorMsg, successMsg, handleValueOnChange, clearAllForm } from '../actions';
 import { logout, removeAllCurrentAccountData, getCurrentUserPhone, sendPhoneVerificationCode, verifySMSCode } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
@@ -14,11 +14,12 @@ const mapDispatchToProps = dispatch => {
     handleOnChange: (name, value) => {
       dispatch(handleValueOnChange(name, value));
     },
-    handleRelog: (history) => {
+    handleRelog: () => {
       dispatch(loading());
       logout(()=>{
+        dispatch(clearAllForm());
         dispatch(notLoading());
-        history.push('/login')
+        dispatch(successMsg('Successfully signed out', '/login'));
       }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message,'/login'));
@@ -68,8 +69,6 @@ const mapDispatchToProps = dispatch => {
     },
     handleCodeVerification: (state) => {
       dispatch(loading());
-      console.log(`Verifying code ${state['FORM_PII_REG_PHONE_CODE']}`)
-      console.log(window.confirmationResult);
       verifySMSCode(state['FORM_PII_REG_PHONE_CODE'], window.confirmationResult).then(() => {
         dispatch(notLoading());
         dispatch(successMsg('Your phone number is verified','/piires'));

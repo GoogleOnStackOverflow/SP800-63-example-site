@@ -1,6 +1,6 @@
 import { connect } from 'react-redux';
 import AppNavBar from '../components/AppNavBar';
-import { loading, notLoading, errorMsg, successMsg } from '../actions';
+import { loading, notLoading, errorMsg, successMsg, clearAllForm } from '../actions';
 import { hasCurrentUser, logout } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
@@ -15,8 +15,9 @@ const mapDispatchToProps = dispatch => {
       if(hasCurrentUser()){
         dispatch(loading());
         logout(()=> {
+          dispatch(clearAllForm());
           dispatch(notLoading());
-          dispatch(successMsg('Successfully signed out', '/login'))
+          dispatch(successMsg('Successfully signed out', '/login'));
         }).catch(err => {
           dispatch(notLoading());
           dispatch(errorMsg(err.message))
