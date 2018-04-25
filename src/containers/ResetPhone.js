@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
-import VerifyPII from '../components/VerifyPII';
-import { openCheck, loading, notLoading, errorMsg, successMsg ,handleValueOnChange } from '../actions';
-import { logout, removeAllCurrentAccountData, getCurrentUserPhone, sendPhoneVerificationCode, verifySMSCode } from '../firebaseActions'
+import ResetVerifyPhone from '../components/ResetVerifyPhone';
+import { loading, notLoading, errorMsg, successMsg ,handleValueOnChange } from '../actions';
+import { sendPhoneVerificationCode, getCurrentUserPhone, getCurrentUserEmail, stopRecoverProcess, loginWithPhoneCode } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -14,31 +14,12 @@ const mapDispatchToProps = dispatch => {
     handleOnChange: (name, value) => {
       dispatch(handleValueOnChange(name, value));
     },
-    handleRelog: (history) => {
-      dispatch(loading());
-      logout(()=>{
-        dispatch(notLoading());
-        history.push('/login')
-      }).catch(err => {
-        dispatch(notLoading());
-        dispatch(errorMsg(err.message,'/login'));
-      })
-    },
     handleCancel: () => {
-      dispatch(openCheck(
-        'Are you sure to cancel the registration process?',
-        'This action is not revertable. All account info would be deleted immediately.',
-        undefined, '/login'
-      ));
-    },
-    handleRemove: () => {
       dispatch(loading());
-      removeAllCurrentAccountData()
-      .then(()=> {
+      stopRecoverProcess(getCurrentUserEmail()).then(() => {
         dispatch(notLoading());
-        dispatch(successMsg('Your account and all personal data are removed', '/login'));
-      })
-      .catch(err => {
+        dispatch(successMsg('Recovering process is stopped. If you want to recover your account, please re-login and verify your personal information again', '/login'));
+      }, err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })
@@ -52,6 +33,7 @@ const mapDispatchToProps = dispatch => {
     handleSendSMS: (callback) => {
       dispatch(loading());
       getCurrentUserPhone().then(phoneNum => {
+        console.log(phoneNum);
         sendPhoneVerificationCode(phoneNum).then(confirmationResult => {
           dispatch(notLoading());
           dispatch(successMsg('A confirmation code has been sent to your phone via SMS'));
@@ -68,11 +50,9 @@ const mapDispatchToProps = dispatch => {
     },
     handleCodeVerification: (state) => {
       dispatch(loading());
-      console.log(`Verifying code ${state['FORM_PII_REG_PHONE_CODE']}`)
-      console.log(window.confirmationResult);
-      verifySMSCode(state['FORM_PII_REG_PHONE_CODE'], window.confirmationResult).then(() => {
+      loginWithPhoneCode(state['FORM_PII_REG_PHONE_CODE'], window.confirmationResult).then(() => {
         dispatch(notLoading());
-        dispatch(successMsg('Your phone number is verified','/piires'));
+        dispatch(successMsg('Your identity is verified','/resetcredentials'));
         dispatch(handleValueOnChange('FORM_PII_REG_PHONE_CODE', ''));
       }, err => {
         dispatch(notLoading());
@@ -86,9 +66,7 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-const VerifyPIIPage = connect(
+export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(VerifyPII)
- 
-export default VerifyPIIPage
+)(ResetVerifyPhone)

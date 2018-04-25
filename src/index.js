@@ -16,7 +16,15 @@ import EvidenceResForm from './containers/EvidenceResForm'
 import RegisterPIIPage from './containers/RegisterPIIPage'
 import VerifyPIIPage from './containers/VerifyPIIPage'
 import DeliverOTPPage from './containers/DeliverOTPPage'
+
 import Service from './containers/Service'
+import UpdatePhoneNumPage from './containers/UpdatePhoneNumPage'
+import UpdatePasswordPage from './containers/UpdatePasswordPage'
+import UpdateOTPPage from './containers/UpdateOTPPage'
+
+import KBVResetForm from './containers/KBVResetForm'
+import ResetEmail from './containers/ResetEmail'
+import ResetPhone from './containers/ResetPhone'
 
 let store = createStore(loginStore);
 
@@ -34,7 +42,15 @@ ReactDOM.render(
         <Route path="/piires" component={RegisterPIIPage} />
         <Route path="/verifypii" component={VerifyPIIPage} />
         <Route path="/deliverotp" component={DeliverOTPPage} />
+
         <Route path="/service" component={Service}/>
+        <Route path="/changephone" component={UpdatePhoneNumPage} />
+        <Route path="/changepwd" component={UpdatePasswordPage} />
+        <Route path="/changeotp" component={UpdateOTPPage} />
+
+        <Route path="/resetaccount" component={KBVResetForm} />
+        <Route path="/resetemail" component={ResetEmail} />
+        <Route path="/resetphone" component={ResetPhone} />
       </div>
     </BrowserRouter>
   </Provider>, 

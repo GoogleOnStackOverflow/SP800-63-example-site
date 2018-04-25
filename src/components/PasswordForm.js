@@ -49,6 +49,19 @@ class PasswordForm extends React.Component {
             </Button>
           </Col>
         </FormGroup>
+
+        <FormGroup>
+          <Col smOffset={2} sm={10}>
+            <Button 
+              bsStyle='warning'
+              onClick={()=>{
+                handleOnChange(formName, '');
+                history.push('/resetaccount')
+              }}>
+              I don't know how to get this. Reset my login credentials
+            </Button>
+          </Col>
+        </FormGroup>
       </Form>
     );
   }

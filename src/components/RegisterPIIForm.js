@@ -5,7 +5,7 @@ import { Form, FormGroup, FormControl, Button, ControlLabel , Col, HelpBlock } f
 import CheckModal from '../containers/CheckModal'
 import { hasCurrentUser, currentUserPIISet } from '../firebaseActions'
 
-const checkID = (ID) => {
+export const checkID = (ID) => {
   let codes = '0123456789ABCDEFGHJKLMNPQRSTUVXYWZIO'
   let decode = [];
   let checkSum = 0;
@@ -31,13 +31,13 @@ const checkID = (ID) => {
   return checkSum % 10 === 0;
 }
 
-const checkPhone = (num) => {
+export const checkPhone = (num) => {
   if(!/^[0-9]{10}$/.test(num))
     return false;
   return num.indexOf('09') === 0;
 }
 
-const checkBirthDay = (day) => {
+export const checkBirthDay = (day) => {
   let now = new Date();
   let nowYear = now.getFullYear();
   let daysInMounth = [undefined, 31, undefined, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];

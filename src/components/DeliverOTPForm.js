@@ -33,15 +33,17 @@ class DeliverOTPForm extends React.Component {
   }
 
   render() {
-    let {state, imageUrl, secret, secret32, handleOnChange, setUpOnClick, generateOnClick, verifyOnClick} = this.props
+    let {state, imageUrl, secret, secret32, handleOnChange, setUpOnClick, generateOnClick, verifyOnClick, disableAutoRedirect} = this.props
     let {verified, onChanging} = this.state;
 
     return (
       <Form horizontal>
         <Thumbnail>
-          <h4>Set up 2-Factor Verification</h4> 
-          <Image src={imageUrl} thumbnail/>
-          <p>{secret32}</p>
+          <h4 align='middle'>Set up 2-Factor Verification</h4> 
+          <p align='middle'>
+            <Image align='middle' src={imageUrl} thumbnail/>
+          </p>
+          <p align='middle'>{secret32}</p>
           <FormGroup 
             validationState={(state['FORM_OTP_ACCOUNT'] && state['FORM_OTP_ACCOUNT'] !== '')? 'success' : 'error'}
             controlId='FORM_OTP_ACCOUNT'>
@@ -101,7 +103,7 @@ class DeliverOTPForm extends React.Component {
         </FormGroup>
         <Button 
           disabled={onChanging || !verified}
-          onClick={()=>{setUpOnClick(secret)}}>
+          onClick={()=>{setUpOnClick(secret, disableAutoRedirect)}}>
           Set Up
         </Button>
       </Form>

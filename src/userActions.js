@@ -21,6 +21,7 @@ const userActions = {
   OTP_DELIVERIED: 'OTP_DELIVERIED',
   OTP_RESET_REQ: 'OTP_RESET_REQ',
   OTP_RESET: 'OTP_RESET',
+  PHONE_EDITED: 'PHONE_EDITED'
 }
 
 export default userActions;

@@ -36,9 +36,13 @@ const mapDispatchToProps = dispatch => {
       }, err => {
         dispatch(handleValueOnChange('FORM_PWD', ''));
         dispatch(notLoading());
-        if(err.code === 'auth/wrong-password')
+        if(err.code === 'auth/wrong-password') {
           dispatch(errorMsg(err.message, '/loginpwd'));
-        else
+        } else if(err.message === 'Permission denied. Wrong password trial limit reached') {
+          dispatch(errorMsg(`${err.message}. Your account is temporary disabled, you would have to recover your account`, '/resetaccount'))
+        } else if(err.message === 'UnderRecover') {
+          dispatch(errorMsg('Your account is under recover, you should reset your account first', '/resetaccount'));
+        } else
           dispatch(errorMsg(err.message, '/login'));
       })
     },

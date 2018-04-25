@@ -9,17 +9,23 @@ var auth = app.auth();
 var db = app.database();
 var storageRef = app.storage().ref();
 
-const fetchFirebaseFunction = (operation, queryObject, fetchOptions) => {
-  const apiurl = 'https://us-central1-sp800-63-example-site.cloudfunctions.net/';
+const mapObjectToQueryString = (queryObject) => {
+  let fetchurl = '?';
   let queryArr = Object.keys(queryObject).map(key => {
     return `${key}=${JSON.stringify(queryObject[key])}`;
   })
 
-  let fetchurl = `${apiurl}${operation}?`
   for(let i=0; i < queryArr.length -1; i++){
     fetchurl += `${queryArr[i]}&`;
   }
   fetchurl += queryArr[queryArr.length-1];
+
+  return fetchurl;
+}
+
+const fetchFirebaseFunction = (operation, queryObject, fetchOptions) => {
+  const apiurl = 'https://us-central1-sp800-63-example-site.cloudfunctions.net/';
+  let fetchurl = `${apiurl}${operation}${mapObjectToQueryString(queryObject)}`
 
   return fetch(fetchurl, fetchOptions);
 }
@@ -107,10 +113,6 @@ export const getUserPII = () => {
       logout();
       reject(Error('Permission Denied'))
     }
-    
-    auth.currentUser.getToken(false).then(tkn => {
-      console.log(tkn);
-    })
 
     db.ref(`/users/${sha256(auth.currentUser.email)}/pii`).once('value').then(snapshot => {
       resolve(snapshot.val());
@@ -261,6 +263,11 @@ export const currentUserOTPDelivered = () => {
 // helpers
 export const hasCurrentUser = () => {
   auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+  if(auth.currentUser)
+    auth.currentUser.getIdToken().then(tkn => {
+      console.log(tkn);
+    })
+  
   return (auth.currentUser)? true : false;
 }
 
@@ -306,7 +313,7 @@ export const verifySMSCode = (code, confirmationResult) => {
   return new Promise((resolve, reject) => {
     let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
 
-    auth.currentUser.linkWithCredential(credential).then(function(user) {
+    auth.currentUser.linkWithCredential(credential).then((user) => {
       recordUserEvent(userActions.PHONE_VERIFIED).then(() => {
         db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified')
         .set(true).then(() => {
@@ -317,35 +324,204 @@ export const verifySMSCode = (code, confirmationResult) => {
       }).catch(err => {
         reject(err);
       })
-    }, function(error) {
-      reject(error);
+    }, (err) => {
+      reject(err);
     });
+  })
+}
+
+export const updateCurrentUserPhone = (phone, code, confirmationResult) => {
+  return new Promise((resolve, reject) => {
+    let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
+
+    auth.currentUser.updatePhoneNumber(credential).then(() => {
+      recordUserEvent(userActions.PHONE_EDITED).then(() => {
+        db.ref('/users/'+sha256(auth.currentUser.email)+'/pii/Phone').set(phone).then(() => {
+          resolve();
+        }).catch(err => {
+          reject(err);
+        })
+      }).catch(err => {
+        reject(err);
+      })
+    }, (err) => {
+      reject(err);
+    }).catch(err => {
+      reject(err);
+    });
+  })
+}
+
+export const updateCurrentUserPassword = (newPwd) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    getUserPII().then(() => {
+      auth.currentUser.updatePassword(newPwd).then(() => {
+        recordUserEvent(userActions.PWD_RESET).then(() => {
+          resolve();
+        }, err => {
+          reject(err);
+        }).catch(err => {
+          reject(err);
+        })
+      }, err => {
+        reject(err);
+      }).catch(err => {
+        reject(err)
+      });
+    }, err => {
+      reject(err);
+    })
+  })
+}
+
+export const updateCurrentUserOTP = (newCredential) => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. Not logged in'));
+    db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(newCredential).then(() => {
+      recordUserEvent(userActions.OTP_RESET).then(() => {
+        resolve();
+      }, err => reject(err))
+      .catch(err => reject(err))
+    }).catch(err => {
+      reject(err);
+    })
+  });
+}
+
+export const emailUnderRecover = (mail) => {
+  return new Promise((resolve, reject) => {
+    if(!mail)
+      reject(Error('Data lost. Email not specified'));
+    db.ref(`/users/${sha256(mail)}/underRecover`).once('value').then(snapshot => {
+      if(snapshot.val())
+        resolve(true);
+      resolve(false)
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const checkAndSendResetMail = (mail) => {
+  return new Promise((resolve, reject) => {
+    if(!mail)
+      reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
+    emailUnderRecover(mail).then(result => {
+      if(result) {
+        let url = `http://localhost:3000/resetphone${mapObjectToQueryString({email: mail})}`;
+        auth.sendSignInLinkToEmail(mail, {url, handleCodeInApp: true}).then(() => {
+          resolve();
+        }).catch(err => {
+          reject(err);
+        })
+      }
+    }, err => {
+      reject(err);
+    });
+  })
+}
+
+export const startRecoverProcess = (mail, id, birthday) => {
+  return new Promise((resolve, reject) => {
+    if(!mail || !id || !birthday)
+      reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
+    fetchFirebaseFunction('markrecoverflag', {usr: sha256(mail), id, birthday}).then((res) => {
+      if(res.status === 200) {
+        resolve();
+      } else {
+        res.text().then(text => {
+          reject(Error(text));  
+        })
+      }
+    })
+  })
+}
+
+export const stopRecoverProcess = (mail) => {
+  return new Promise((resolve, reject) => {
+    if(!mail)
+      reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
+    emailUnderRecover(mail).then(result => {
+      if(result) {
+        fetchFirebaseFunction('markrecoverflag', {usr: sha256(mail)}).then((res) => {
+          if(res.status === 200) {
+            resolve();
+          } else {
+            res.text().then(text => {
+              reject(Error(text));  
+            })
+          }
+        })
+      } else {
+        reject(Error('Permission Denied. Account does not exists or is not under recover.'))
+      }
+    }, err => {
+      reject(err);
+    })
   })
 }
 
 // Sign in / Sing out
 export const loginWithEmailPwd = (email, password) => {
   return new Promise((resolve, reject) => {
-    db.ref('/users/'+sha256(email)+'/pwdFailedCounter').once('value').then(snapshot => {
-      if(!snapshot || !snapshot.val() || snapshot.val() <= 5)
-        auth.signInWithEmailAndPassword(email, password).then(() => {
-          recordUserEvent(userActions.PWD_LOGIN_SUCCESS).then(()=> {
-            resolve();
-          })
-        })
-        .catch(err => {
-          if(err.code === 'auth/wrong-password') {
-            recordUserEvent(userActions.PWD_LOGIN_FAILED, email).then(() => {
-              reject(err);
+    emailUnderRecover(email).then(result => {
+      if(result) {
+        reject(Error('UnderRecover'));
+      } else {
+        db.ref('/users/'+sha256(email)+'/pwdFailedCounter').once('value').then(snapshot => {
+          if(!snapshot || !snapshot.val() || snapshot.val() <= 5)
+            auth.signInWithEmailAndPassword(email, password).then(() => {
+              recordUserEvent(userActions.PWD_LOGIN_SUCCESS).then(()=> {
+                resolve();
+              })
             })
-          } else {
-            reject(err);
-          }
-        })
-      else
-        reject(Error('Permission denied. Wrong password trial limit reached'));
-    }).catch(err => reject(err))
+            .catch(err => {
+              if(err.code === 'auth/wrong-password') {
+                recordUserEvent(userActions.PWD_LOGIN_FAILED, email).then(() => {
+                  reject(err);
+                })
+              } else {
+                reject(err);
+              }
+            })
+          else
+            reject(Error('Permission denied. Wrong password trial limit reached'));
+        }).catch(err => reject(err))
+      }
+    }, err => {
+      reject(err);
+    })
   }) 
+}
+
+export const loginWithEmailLink = (email, href) => {
+  return new Promise((resolve, reject) => {
+    if(firebase.auth().isSignInWithEmailLink(href)) {
+      auth.signInWithEmailLink(email, href).then(result => {
+        resolve();
+      }).catch(err => {
+        reject(err);
+      })
+    } else {
+      reject(Error('Permission Denied. Please enter this page by the link in the mail'));
+    }
+  })
+}
+
+export const loginWithPhoneCode = (code, confirmationResult) => {
+  return new Promise((resolve, reject) => {
+    let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
+    auth.signOut().then(() => {
+      auth.signInWithCredential(credential).then(() => {
+        resolve()
+      }, err => {
+        reject(err);
+      })
+    })
+  })
 }
 
 export const loginWithOTP = (otp) => {

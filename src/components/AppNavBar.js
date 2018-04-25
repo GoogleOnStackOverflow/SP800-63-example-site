@@ -5,7 +5,7 @@ import { withRouter } from "react-router-dom"
 import AlertModal from '../containers/AlertModal'
 import LoadingSpin from '../containers/LoadingSpin'
 
-const AppNavBar = ({isLogin, handleLogOnClick, history})=> {
+const AppNavBar = ({isLogin, handleLogOnClick, history, location})=> {
   return (
     <Navbar>
       <AlertModal/>
@@ -29,7 +29,7 @@ const AppNavBar = ({isLogin, handleLogOnClick, history})=> {
         </Nav>
         <Nav pullRight>
         <NavItem eventKey={1} onClick={()=>{handleLogOnClick(history)}}>
-          {isLogin? "Logout" : "Login"}
+          {['/login','/loginpwd', '/loginotp'].includes(location.pathname) ? '' : isLogin? "Logout" : "Login"}
         </NavItem>
       </Nav>
     </Navbar>

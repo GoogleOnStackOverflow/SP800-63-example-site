@@ -54,6 +54,17 @@ const verifyTknAndGetShaEmail = (tkn) => {
   });
 }
 
+const verifyTknAndCheckPermission = (tkn) => {
+  return new Promise((resolve, reject) => {
+    admin.auth().verifyIdToken(tkn).then(decodedToken => {
+      console.log(decodedToken)
+      resolve(decodedToken);
+    }, err => {
+      reject(err);
+    })
+  });
+}
+
 const checkOTPQualificationThenCredential = (usr, otp) => {
   return new Promise((resolve, reject) => {
     db.ref(`/users/${usr}`).once('value').then(snapshot => {
@@ -363,6 +374,9 @@ exports.setotpcredential = functions.https.onRequest((req, res) => {
   if(!req.query.usr || !req.query.credential)
     return res.status(400).send('Bad Request');
 
+  // TODO 
+  // should check the tkn permission
+  verifyTknAndCheckPermission(JSON.parse(req.query.usr));
   verifyTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
     db.ref(`/users/${email}/otpCredential`).set(JSON.parse(decodeURIComponent(req.query.credential))).then(() => {
       return res.status(200).send('OK');
@@ -374,7 +388,51 @@ exports.setotpcredential = functions.https.onRequest((req, res) => {
   })
 });
 
-// phone not verified trigger
+// start recovery process
+exports.markrecoverflag = functions.https.onRequest((req, res) => {
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  if(!req.query.usr)
+    return res.status(400).send('Bad Request');
+
+  let usr = JSON.parse(req.query.usr);
+  console.log(`Got mark request of usr = ${usr}`);
+  if(!req.query.id && !req.query.birthday) {
+    // set the flag false
+    db.ref(`/users/${usr}/underRecover`).set(false).then(() => {
+      return res.status(200).send('OK');
+    }).catch(err => {
+      return res.status(500).send(err.message);
+    })
+  } else if(!req.query.id || !req.query.birthday) {
+    return res.status(400).send('Bad Request');
+  } else {
+    // verify the pii and set the flag true
+    db.ref(`/users/${usr}`).once('value').then(snapshot => {
+      if(!snapshot.val())
+        return res.status(400).send('Account not exists');
+      if(!snapshot.val().piiVerified)
+        return res.status(400).send('User has not finished the register process yet')
+      else {
+        let recordPii = snapshot.val().pii;
+        if(JSON.parse(req.query.id) === recordPii.ID 
+          && JSON.parse(req.query.birthday) === recordPii.Birthday){
+          db.ref(`/users/${usr}/underRecover`).set(true).then(() => {
+            return res.status(200).send('OK');
+          }).catch(err => {
+            return res.status(500).send(err.message);
+          })
+        } else {
+          return res.status(400).send('Permission Denied. The personal information verification failed');
+        }
+      }
+    }).catch(err => {
+      return res.status(500).send(err.message);
+    })
+  }
+})
 
 // Throttling trigger
 exports.manageThrottling = functions.database.ref('/users/{userID}/events/{eventTime}').onCreate((snap, context) => {

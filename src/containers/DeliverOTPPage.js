@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import DeliverOTPForm from '../components/DeliverOTPForm';
 import { handleValueOnChange, loading, notLoading, errorMsg, successMsg, setOTP, clearOTP } from '../actions';
-import { generateOTPKeyAndQRCode, verifyOTP, setCurrentUserOTP } from '../firebaseActions'
+import { generateOTPKeyAndQRCode, verifyOTP, setCurrentUserOTP, updateCurrentUserOTP } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -24,16 +24,27 @@ const mapDispatchToProps = dispatch => {
     dispatchNotLoading: () => {
       dispatch(notLoading());
     },
-    setUpOnClick: (secret) => {
+    setUpOnClick: (secret, reset) => {
       dispatch(loading());
-      setCurrentUserOTP(secret).then(() =>{
-        dispatch(notLoading());
-        dispatch(successMsg('2-Factor authentication credential set up. Your account is enabled', '/service'));
-        dispatch(clearOTP());
-      }, err => {
-        dispatch(notLoading());
-        dispatch(errorMsg(err.message));
-      })
+      if(!reset) {
+        setCurrentUserOTP(secret).then(() =>{
+          dispatch(notLoading());
+          dispatch(successMsg('2-Factor authentication credential set up. Your account is enabled', '/service'));
+          dispatch(clearOTP());
+        }, err => {
+          dispatch(notLoading());
+          dispatch(errorMsg(err.message));
+        })
+      } else {
+        updateCurrentUserOTP(secret).then(() =>{
+          dispatch(notLoading());
+          dispatch(successMsg('2-Factor authentication credential set up. Your account is enabled', '/service'));
+          dispatch(clearOTP());
+        }, err => {
+          dispatch(notLoading());
+          dispatch(errorMsg(err.message));
+        })
+      }
     },
     generateOnClick: (state) => {
       dispatch(loading());
