@@ -1,25 +1,20 @@
-import { LOADING, NOT_LOADING, 
-  WEAK_PWD, OPEN_ALERT, CLOSE_ALERT,
+import { SHOW_COVERING, CLOSE_COVERING, 
+  OPEN_ALERT, CLOSE_ALERT,
   OPEN_CHECK, CLOSE_CHECK,
   GEN_OTP, CLEAR_OTP,
   FIRE_REAUTH, CANCEL_REAUTH} from '../actions';
 
 const show = (state = {}, action) => {
   switch (action.type) {
-    case LOADING:
+    case SHOW_COVERING:
       return {
         ...state,
-        loading: true
+        covering: action.covering
       }
-    case NOT_LOADING:
+    case CLOSE_COVERING:
       return {
         ...state,
-        loading: false
-      }
-    case WEAK_PWD:
-      return {
-        ...state,
-        weak: action.weak
+        covering: undefined
       }
     case OPEN_ALERT:
       return {

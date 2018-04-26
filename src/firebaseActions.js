@@ -460,6 +460,21 @@ export const stopRecoverProcess = (mail) => {
 }
 
 // Sign in / Sing out
+export const checkAccountExist = (email) => {
+  return new Promise((resolve, reject) => {
+    fetchFirebaseFunction('emailusedup', {usr: sha256(email)}).then(res => {
+      res.text().then(text => {
+        if(res.status === 200) 
+          resolve(JSON.parse(text));
+        else 
+          reject(Error(text));
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
 export const loginWithEmailPwd = (email, password) => {
   return new Promise((resolve, reject) => {
     emailUnderRecover(email).then(result => {
@@ -547,6 +562,25 @@ export const loginWithOTP = (otp) => {
       reject(err);
     })
   });
+}
+
+export const loginGetChallenge = () => {
+  return new Promise((resolve, reject) => {
+    auth.currentUser.getIdToken(false).then(tkn => {
+      fetchFirebaseFunction('getchallenge', {usr: tkn}).then((res) => {
+        res.text().then(text => {
+          if(res.status === 200)
+            resolve(JSON.parse(text));
+          else
+            reject(Error(text));
+        })
+      }).catch(err => {
+        reject(err);
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
 }
 
 export const logout = (callback) => {

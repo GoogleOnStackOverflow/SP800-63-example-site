@@ -1,6 +1,3 @@
-export const LOADING = 'LOADING';
-export const NOT_LOADING = 'NOT_LOADING';
-
 export const HANDLE_VALUE_ONCHANGE = 'HANDLE_VALUE_ONCHANGE';
 export const CLEAR_ALL_VALUE = 'CLEAR_ALL_VALUE';
 
@@ -17,30 +14,34 @@ export const clearAllForm = () => {
   }
 }
 
-export const loading = () => {
+export const SHOW_COVERING = 'SHOW_COVERING';
+export const CLOSE_COVERING = 'CLOSE_COVERING';
+
+export const showCovering = (title, content) => {
   return {
-    type: LOADING
+    type: SHOW_COVERING,
+    covering: {title, content}
   }
+}
+
+export const closeCovering = () => {
+  return {
+    type: CLOSE_COVERING
+  }
+}
+
+export const loading = () => {
+  return showCovering('Loading', 'Please wait...');
 }
 
 export const notLoading = () => {
-  return {
-    type: NOT_LOADING
-  }
+  return closeCovering();
 }
 
-export const WEAK_PWD = 'WEAK_PWD';
 export const OPEN_ALERT = 'OPEN_ALERT';
 export const CLOSE_ALERT = 'CLOSE_ALERT';
 export const OPEN_CHECK = 'OPEN_CHECK'
 export const CLOSE_CHECK = 'CLOSE_CHECK';
-
-export const weak = (weak) => {
-  return {
-    type: WEAK_PWD,
-    weak
-  }
-}
 
 export const errorMsg = (message, navPath) => {
   return {

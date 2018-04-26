@@ -3,15 +3,15 @@ import PropTypes from 'prop-types'
 import { Nav, Navbar, NavItem, NavDropdown, MenuItem } from 'react-bootstrap'
 import { withRouter } from "react-router-dom"
 import AlertModal from '../containers/AlertModal'
-import LoadingSpin from '../containers/LoadingSpin'
 import IdleModal from '../containers/IdleModal'
+import Covering from '../containers/Covering'
 
 const AppNavBar = ({isLogin, handleLogOnClick, history, location})=> {
   return (
     <Navbar>
+      <Covering/>
       <IdleModal/>
       <AlertModal/>
-      <LoadingSpin/>
       <Navbar.Header>
         <Navbar.Brand>
           <a href="/">Example Site</a>

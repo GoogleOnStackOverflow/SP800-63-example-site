@@ -4,6 +4,7 @@ const speakeasy = require('speakeasy');
 const sha256 = require('sha256');
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 var serviceAccount = require("./sp800-63-example-site-firebase-adminsdk-cfib4-633852dd75.json");
 admin.initializeApp({
@@ -54,10 +55,22 @@ const verifyTknAndGetShaEmail = (tkn) => {
   });
 }
 
-const verifyTknAndCheckPermission = (tkn) => {
+const verifyOTPTknAndGetShaEmail = (tkn) => {
   return new Promise((resolve, reject) => {
     admin.auth().verifyIdToken(tkn).then(decodedToken => {
-      // TODO check the content of each permission
+      if(decodedToken.otpVerified)
+        resolve(decodedToken.dbUsrID)
+      else
+        resolve(false);
+    }, err => {
+      reject(err);
+    })
+  });
+}
+
+const verifyTknSingedByPhone = (tkn) => {
+  return new Promise((resolve, reject) => {
+    admin.auth().verifyIdToken(tkn).then(decodedToken => {
       console.log(decodedToken.firebase.sign_in_provider);
       if(decodedToken.firebase.sign_in_provider === 'phone')
         resolve(true);
@@ -114,36 +127,30 @@ exports.otpverifier = functions.https.onRequest((req, res) => {
             signTkn(JSON.parse(req.query.usr), {
               otpVerified: true,
               dbUsrID: email,
-
-              // sign success, response the token
             }).then(tkn => {
+              // sign success, response the token
               return res.status(200).send(JSON.stringify(tkn));
-
-              // sign failed
             }).catch(err => {
+              // sign failed
               return res.status(500).send(err.message);
             })
-
-          // event recording error
           }).catch(err => {
+            // event recording error
             return res.status(500).send(err.message);
           })
         }).catch(err => {
           return res.status(500).send(err.message);
         })
-
-      // OTP verification failed
       } else {
+        // OTP verification failed
         return res.status(400).send('OTP Verification Failed (Invalid OTP)');  
       }
-
-    // OTP qualification failed
     }, err => {
+      // OTP qualification failed
       return res.status(400).send(err.message);
     })
-
-  // email/pwd tkn verification failed
   }, err => {
+    // email/pwd tkn verification failed
     return res.status(400).send(err.message);
   })
 });
@@ -297,6 +304,71 @@ exports.userevidenceuploaded = functions.https.onRequest((req, res) => {
   });
 });
 
+// get challenge and start a crypto login process if account is admin
+exports.getchallenge = functions.https.onRequest((req, res) => {
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  if(!req.query.usr)
+    return res.status(400).send('Bad Request');
+
+  verifyOTPTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
+    if(email) {
+      // OTP token verified
+      db.ref(`/users/${email}/admin`).once('value').then(snapshot => {
+        if(snapshot.val()) {
+          // generate a challenge
+          crypto.randomBytes(32, (err, buf) => {
+            if(err)
+              return res.status(500).send(err.message);
+            else {
+              // save the challenge value in user db
+              let challenge = buf.toString('base64');
+              db.ref(`/users/${email}/adminNonce`).set(challenge).then(() => {
+                // sign a JWT involing the challenge
+                signTkn(JSON.parse(req.query.usr), {challenge: challenge}).then(tkn => {
+                  // send the JWT to the client
+                  return res.status(200).send(JSON.stringify(tkn));
+                }, err => {
+                  return res.status(500).send(err.message);  
+                })
+              }, err => {
+                return res.status(500).send(err.message);
+              })
+            }
+          })
+        } else {
+          return res.status(200).send(JSON.stringify(false));
+        }
+      })
+    } else {
+      // Not an OTP verified tkn
+      return res.status(400).send('Permission Denied. OTP not verifeid.');
+    }
+  }, err => {
+    // Tkn verification failed
+    return res.status(400).send(err.message);
+  })
+});
+
+exports.emailusedup = functions.https.onRequest((req, res) => {
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  if(!req.query.usr)
+    return res.status(400).send('Bad Request');
+
+  let usr = JSON.parse(req.query.usr);
+  db.ref(`/users/${usr}`).once('value').then(snapshot => {
+    let result = snapshot.val()? true : false;
+    return res.status(200).send(JSON.stringify(result));
+  }).catch(err => {
+    return res.status(500).send(err.message);
+  })
+})
+
 // check if phone used
 exports.phoneusedup = functions.https.onRequest((req, res) => {
   res.header('Access-Control-Allow-Origin', "*");
@@ -322,28 +394,6 @@ exports.phoneusedup = functions.https.onRequest((req, res) => {
     return res.status(500).send(err.message);
   })
 });
-
-// check if email used
-exports.emailusedup = functions.https.onRequest((req, res) => {
-  res.header('Access-Control-Allow-Origin', "*");
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-
-  if(!req.query.email)
-    return res.status(400).send('Bad Request');
-
-  let email = sha256(JSON.parse(req.query.email));
-  db.ref('/users/').once('value').then(snapshot => {
-    if(Object.keys(snapshot.val()).includes(email))
-      return res.status(200).send(JSON.parse(true));
-    else
-      return res.status(200).send(JSON.parse(true));
-  }).catch(err => {
-    return res.status(500).send(err.message);
-  })
-});
-
-// get user pii
 
 // get user phone
 exports.getusrphone = functions.https.onRequest((req, res) => {
