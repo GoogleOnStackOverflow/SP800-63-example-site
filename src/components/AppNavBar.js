@@ -6,6 +6,7 @@ import AlertModal from '../containers/AlertModal'
 import IdleModal from '../containers/IdleModal'
 import Covering from '../containers/Covering'
 
+
 const AppNavBar = ({isLogin, handleLogOnClick, history, location})=> {
   return (
     <Navbar>

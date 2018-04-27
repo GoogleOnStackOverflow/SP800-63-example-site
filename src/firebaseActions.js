@@ -583,6 +583,39 @@ export const loginGetChallenge = () => {
   })
 }
 
+export const loginWithSignature = (tkn, sig) => {
+  return new Promise((resolve, reject) => {
+    // First sign out usr to make the tkn clean
+    auth.signOut().then(() => {
+      // Sign in with the tkn
+      auth.signInWithCustomToken(tkn).then(() => {
+        // Use the tkn to fetch login request
+        auth.currentUser.getIdToken(false).then(newtkn =>{
+          // Fetch request with tkn and signed challenge
+          fetchFirebaseFunction('verifychallenge', {usr: newtkn, sig}).then(res => {
+            res.text().then(text => {
+              // If verification success, sign in with the new token to get full permission
+              if(res.status === 200) {
+                auth.signOut().then(()=>{
+                  auth.signInWithCustomToken(text).then(() => {
+                    resolve();
+                  })
+                });
+              } else {
+                // if not verified, reject the error message
+                reject(Error(text));
+              }
+            })
+          })
+        })
+      })
+    }).catch(err => {
+      // reject all error
+      reject(err);
+    })
+  })
+}
+
 export const logout = (callback) => {
   return auth.signOut().then(()=>{
     if(callback)

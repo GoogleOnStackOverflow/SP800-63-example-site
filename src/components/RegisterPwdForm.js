@@ -15,10 +15,10 @@ class RegisterPasswordForm extends React.Component {
     return (
       <Form horizontal>
         <FormGroup controlId="title">
-          <h4 align='middle'>Sign On</h4>
+          <h4 align='middle'>Sign Up</h4>
         </FormGroup>
         <FormGroup 
-          validationState={state['FORM_REG_PWD'] && state['FORM_REG_PWD'].length<8?'error':'success'}
+          validationState={state['FORM_REG_PWD']? (state['FORM_REG_PWD'].length<8?'error':'success'):'default'}
           controlId="formHorizontalPassword">
           <Col componentClass={ControlLabel} sm={2}>
             Set your password
@@ -35,10 +35,10 @@ class RegisterPasswordForm extends React.Component {
           </Col>
         </FormGroup>
         <FormGroup 
-          validationState={state['FORM_REG_PWD']===state['FORM_REG_PWD_CHECK']?'success':'error'}
+          validationState={state['FORM_REG_PWD_CHECK']?(state['FORM_REG_PWD']===state['FORM_REG_PWD_CHECK']?'success':'error'):'default'}
           controlId="formHorizontalPassword">
           <Col componentClass={ControlLabel} sm={2}>
-            check the password
+            Check the password
           </Col>
           <Col sm={10}>
             <FormControl 
@@ -59,6 +59,7 @@ class RegisterPasswordForm extends React.Component {
               Cancel
             </Button>
             <Button 
+              bsStyle='success'
               disabled={!state['FORM_REG_PWD'] || state['FORM_REG_PWD'].length<8 
                 || state['FORM_REG_PWD']!==state['FORM_REG_PWD_CHECK']}
               onClick={()=>{submitOnClick(state, history)}}>

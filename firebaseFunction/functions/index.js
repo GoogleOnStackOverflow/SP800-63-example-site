@@ -5,6 +5,7 @@ const sha256 = require('sha256');
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const eccrypto = require("eccrypto");
 
 var serviceAccount = require("./sp800-63-example-site-firebase-adminsdk-cfib4-633852dd75.json");
 admin.initializeApp({
@@ -67,6 +68,27 @@ const verifyOTPTknAndGetShaEmail = (tkn) => {
     })
   });
 }
+
+const verifyChallengeTknAndGetInfo = (tkn) => {
+  return new Promise((resolve, reject) => {
+    admin.auth().verifyIdToken(tkn).then(decodedToken => {
+      if(decodedToken.challenge) {
+        getEmailByUid(decodedToken.uid).then(email => {
+          resolve({
+            usr: sha256(email),
+            chl: decodedToken.challenge
+          });
+        }, err => {
+          reject(err);
+        })
+      else
+        resolve(false);
+    }, err => {
+      reject(err);
+    })
+  });
+}
+
 
 const verifyTknSingedByPhone = (tkn) => {
   return new Promise((resolve, reject) => {
@@ -351,6 +373,45 @@ exports.getchallenge = functions.https.onRequest((req, res) => {
     return res.status(400).send(err.message);
   })
 });
+
+
+// get challenge and start a crypto login process if account is admin
+exports.verifychallenge = functions.https.onRequest((req, res) => {
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  if(!req.query.usr || !req.query.sig)
+    return res.status(400).send('Bad Request');
+
+  let sig = Buffer.from(JSON.parse(req.query.sig), 'base64');
+  verifyChallengeTknAndGetInfo(JSON.parse(req.query.usr)).then(info => {
+    if(info) {
+      db.ref(`/users/${info.usr}`).once('value').then(snapshot => {
+        if(snapshot.val().admin && snapshot.val().adminNonce && snapshot.val().adminNonce === info.chl) {
+          let publicKey = Buffer.from(snapshot.val().admin, 'hex');
+          let challenge = Buffer.from(info.chl, 'base64');
+          
+          eccrypto.verify(publicKey, challenge, sig).then(() => {
+            signTkn(JSON.parse(req.query.usr), {admin: true}).then(tkn => {
+              return res.status(200).send(JSON.stringify(tkn));
+            }, err => {
+              return res.status(500).send(err.message);
+            })
+          }).catch(() => {
+            return res.status(400).send('Permission Denied. Invalid Signature.');
+          });
+        } else {
+          return res.status(400).send('Permission Denied. Invalid or expired challenge.');
+        }
+      })
+    } else {
+      return res.status(400).send('Permission Denied. Invalid login token permission.');
+    }
+  }, err => {
+    return res.status(500).send(err.message);
+  })
+}
 
 exports.emailusedup = functions.https.onRequest((req, res) => {
   res.header('Access-Control-Allow-Origin', "*");
