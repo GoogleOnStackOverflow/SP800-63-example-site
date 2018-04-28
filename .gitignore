@@ -25,3 +25,5 @@ firebaseFunction/functions/*.json
 src/config.js
 src/server.js
 src/verifyUser.js
+
+verifier/authenticator.js

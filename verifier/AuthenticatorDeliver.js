@@ -36,7 +36,7 @@ const signChallenge = (challenge, privateKey) => {
 }
 
 const getLoginUrl = (tkn, signedChallenge) => {
-  return hostname + '?tkn=' + tkn + '&sig=' + signedChallenge;
+  return hostname + '?tkn=' + (tkn) + '&sig=' + (signedChallenge);
 }
 
 const main = (pwd, tkn) => {
@@ -53,7 +53,7 @@ const main = (pwd, tkn) => {
   }
 
   signChallenge(challenge, privateKey).then(sig => {
-    console.log(getLoginUrl(tkn, sig.toString('base64')));  
+    console.log(getLoginUrl(tkn, sig.toString('hex')));  
   });
 }
 
@@ -94,14 +94,13 @@ const main = (password) => {
   let keypair = generateAndReturnKeyPair();
   let wrapped_key = aes256WithPasswordSaltIV(password, salt, iv, keypair[1])
 
-  console.log('\nAuthenticator')
   fs.writeFile('authenticator.js', mfcryptosfwarestring(hostname, salt.toString('hex'), wrapped_key.toString('hex')), err => {
     if(err)
       console.error(err);
   })
   
   console.log('authenticator.js generated');
-  console.log('User public key:')
+  console.log('\nUser public key:');
   console.log(keypair[0].toString('hex'));
 }
 

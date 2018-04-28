@@ -4,6 +4,7 @@ import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button } from 'react-bootstrap';
 import { FORM_USR, isEmail } from './LoginForm'
 
+import CheckModal from '../containers/CheckModal'
 import ChallengeModal from './ChallengeModal'
 
 class PasswordForm extends React.Component {
@@ -17,6 +18,10 @@ class PasswordForm extends React.Component {
     return (
       <div align='middle'>
         <ChallengeModal challenge={challenge}/>
+        <CheckModal 
+          cancelOnClick={()=>{cancelOnClick(history)}} 
+          okOnClick={()=>{}}
+        />
         <h4>{`Login (${placeHolder})`}</h4>
         <Form inline onSubmit={(e) => {
           e.preventDefault();

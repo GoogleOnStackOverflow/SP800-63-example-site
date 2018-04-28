@@ -19,7 +19,7 @@ class IdleModal extends React.Component {
   }
 
   componentWillUpdate() {
-    if(this.state.time - this.props.idle > 15*60)
+    if((this.state.time - this.props.idle > 15*60) && hasCurrentUser())
       this.props.handleLogout(this.props.history);
   }
 

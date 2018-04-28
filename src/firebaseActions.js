@@ -571,6 +571,8 @@ export const loginGetChallenge = () => {
         res.text().then(text => {
           if(res.status === 200)
             resolve(JSON.parse(text));
+          else if (res.status === 204)
+            reject();
           else
             reject(Error(text));
         })

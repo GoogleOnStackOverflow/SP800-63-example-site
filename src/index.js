@@ -27,6 +27,8 @@ import ResetEmail from './containers/ResetEmail'
 import ResetPhone from './containers/ResetPhone'
 import ResetCredentialPage from './containers/ResetCredentialPage'
 
+import AdminLogin from './containers/AdminLogin'
+
 let store = createStore(loginStore);
 
 ReactDOM.render(
@@ -53,6 +55,8 @@ ReactDOM.render(
         <Route path="/resetemail" component={ResetEmail} />
         <Route path="/resetphone" component={ResetPhone} />
         <Route path="/resetcredentials" component={ResetCredentialPage} />
+
+        <Route path="/admin" component={AdminLogin} />
       </div>
     </BrowserRouter>
   </Provider>, 

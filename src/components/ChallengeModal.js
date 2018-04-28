@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, Panel, Col } from 'react-bootstrap';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 const ChallengeModal = ({challenge}) => {
@@ -11,7 +11,9 @@ const ChallengeModal = ({challenge}) => {
       </Modal.Header>
       <Modal.Body>
         <p>Welcome. To continue the login process, please use the following token as your crypto-software input to generate a login url.</p>
-        <p>{challenge}</p>
+        <Panel>
+          <Panel.Body><Col>{challenge}</Col></Panel.Body>
+        </Panel>
       </Modal.Body>
       <Modal.Footer>
         <CopyToClipboard text={challenge}>

@@ -3,6 +3,7 @@
   "description": "online verifier",
   "dependencies": {
     "crypto": "^1.0.1",
+    "eccrypto": "^1.0.3",
     "firebase-admin": "~5.11.0",
     "firebase-functions": "^1.0.0",
     "sha256": "^0.2.0",

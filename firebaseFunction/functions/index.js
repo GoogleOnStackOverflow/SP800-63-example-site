@@ -81,14 +81,14 @@ const verifyChallengeTknAndGetInfo = (tkn) => {
         }, err => {
           reject(err);
         })
-      else
+      } else {
         resolve(false);
+      }
     }, err => {
       reject(err);
     })
   });
 }
-
 
 const verifyTknSingedByPhone = (tkn) => {
   return new Promise((resolve, reject) => {
@@ -338,29 +338,37 @@ exports.getchallenge = functions.https.onRequest((req, res) => {
   verifyOTPTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
     if(email) {
       // OTP token verified
-      db.ref(`/users/${email}/admin`).once('value').then(snapshot => {
-        if(snapshot.val()) {
-          // generate a challenge
-          crypto.randomBytes(32, (err, buf) => {
-            if(err)
-              return res.status(500).send(err.message);
-            else {
-              // save the challenge value in user db
-              let challenge = buf.toString('base64');
-              db.ref(`/users/${email}/adminNonce`).set(challenge).then(() => {
-                // sign a JWT involing the challenge
-                signTkn(JSON.parse(req.query.usr), {challenge: challenge}).then(tkn => {
-                  // send the JWT to the client
-                  return res.status(200).send(JSON.stringify(tkn));
-                }, err => {
-                  return res.status(500).send(err.message);  
-                })
-              }, err => {
+      db.ref(`/users/${email}/`).once('value').then(snapshot => {
+        // check if the user is admin
+        if(snapshot.val() && snapshot.val().admin) {
+          // check the throttling info
+          if(!snapshot.val().adminFailedCounter || snapshot.val().adminFailedCounter <=5){
+            // generate a challenge
+            crypto.randomBytes(32, (err, buf) => {
+              if(err)
                 return res.status(500).send(err.message);
-              })
-            }
-          })
+              else {
+                // save the challenge value in user db
+                let challenge = buf.toString('base64');
+                db.ref(`/users/${email}/adminNonce`).set(challenge).then(() => {
+                  // sign a JWT involing the challenge
+                  signTkn(JSON.parse(req.query.usr), {challenge: challenge}).then(tkn => {
+                    // send the JWT to the client
+                    return res.status(200).send(JSON.stringify(tkn));
+                  }, err => {
+                    return res.status(500).send(err.message);  
+                  })
+                }, err => {
+                  return res.status(500).send(err.message);
+                })
+              }
+            })
+          } else {
+            // admin login failed attemp limit reached
+            return res.status(204).send(JSON.stringify(false));
+          }
         } else {
+          // user is not an admin
           return res.status(200).send(JSON.stringify(false));
         }
       })
@@ -375,7 +383,7 @@ exports.getchallenge = functions.https.onRequest((req, res) => {
 });
 
 
-// get challenge and start a crypto login process if account is admin
+// verify a signed challenge of user
 exports.verifychallenge = functions.https.onRequest((req, res) => {
   res.header('Access-Control-Allow-Origin', "*");
   res.header('Access-Control-Allow-Methods', 'GET');
@@ -384,34 +392,67 @@ exports.verifychallenge = functions.https.onRequest((req, res) => {
   if(!req.query.usr || !req.query.sig)
     return res.status(400).send('Bad Request');
 
-  let sig = Buffer.from(JSON.parse(req.query.sig), 'base64');
+  let sig = Buffer.from(JSON.parse(req.query.sig), 'hex');
+  // get user sha mail and the challenge
   verifyChallengeTknAndGetInfo(JSON.parse(req.query.usr)).then(info => {
+    // if info exists, verify the info
     if(info) {
+      // get user data
       db.ref(`/users/${info.usr}`).once('value').then(snapshot => {
-        if(snapshot.val().admin && snapshot.val().adminNonce && snapshot.val().adminNonce === info.chl) {
+        // check if the challenge nonce in the token is valid (as the one in db record)
+        if(snapshot.val().admin 
+          && snapshot.val().adminNonce 
+          && snapshot.val().adminNonce === info.chl
+          && (!snapshot.val().adminFailedCounter || snapshot.val().adminFailedCounter <= 5)) {
           let publicKey = Buffer.from(snapshot.val().admin, 'hex');
           let challenge = Buffer.from(info.chl, 'base64');
           
+          // verify the signature
           eccrypto.verify(publicKey, challenge, sig).then(() => {
+            // verification success, sign a tkn to the user
             signTkn(JSON.parse(req.query.usr), {admin: true}).then(tkn => {
-              return res.status(200).send(JSON.stringify(tkn));
+              // clear the used nonce
+              db.ref(`/users/${info.usr}/adminNonce`).set(false).then(() => {
+                // record the event to trigger throttling events
+                let d = new Date();
+                db.ref(`/users/${info.usr}/events/${d}`).set({name: 'ADMIN_LOGIN_SUCCESS'}).then(() => {
+                  // send the signed admin permission token to client
+                  return res.status(200).send(JSON.stringify(tkn));
+                }).catch(err => {
+                  // Record event failed
+                  return res.status(500).send(err.message);  
+                })
+              }).catch(err => {
+                // Clear nonce failed
+                return res.status(500).send(err.message);  
+              })
             }, err => {
+              // Sign token failed
               return res.status(500).send(err.message);
             })
-          }).catch(() => {
-            return res.status(400).send('Permission Denied. Invalid Signature.');
+          }).catch((err) => {
+            // Signature verification failed. Record this event to trigger the throttling process
+            let d = new Date();
+            db.ref(`/users/${info.usr}/events/${d}`).set({name: 'ADMIN_LOGIN_FAILED'}).then(() => {
+              return res.status(400).send('Permission Denied. Invalid Signature.');
+            }).catch(err => {
+              return res.status(400).send(err.message);
+            })
           });
         } else {
+          // challenge in token not match the one in db or the db challenge is used and cleaned
           return res.status(400).send('Permission Denied. Invalid or expired challenge.');
         }
       })
     } else {
+      // token verification failed or challenge claims not exists
       return res.status(400).send('Permission Denied. Invalid login token permission.');
     }
   }, err => {
+    // token verification failed with internal error
     return res.status(500).send(err.message);
   })
-}
+})
 
 exports.emailusedup = functions.https.onRequest((req, res) => {
   res.header('Access-Control-Allow-Origin', "*");
@@ -571,36 +612,60 @@ exports.markrecoverflag = functions.https.onRequest((req, res) => {
 // Throttling trigger
 exports.manageThrottling = functions.database.ref('/users/{userID}/events/{eventTime}').onCreate((snap, context) => {
   return new Promise((resolve, reject) => {
-    if(snap.val().name === 'PWD_LOGIN_FAILED'){
-      db.ref(`/users/${context.params.userID}/pwdFailedCounter`).once('value').then(snapshot => {
-        var nextNum = 1;
-        if(snapshot && snapshot.val())
-          nextNum = snapshot.val() + 1;
-        db.ref(`/users/${context.params.userID}/pwdFailedCounter`).set(nextNum).then(() => {
-          resolve();
+    switch(snap.val().name) {
+      case 'PWD_LOGIN_FAILED':
+        db.ref(`/users/${context.params.userID}/pwdFailedCounter`).once('value').then(snapshot => {
+          var nextNum = 1;
+          if(snapshot && snapshot.val())
+            nextNum = snapshot.val() + 1;
+          db.ref(`/users/${context.params.userID}/pwdFailedCounter`).set(nextNum).then(() => {
+            resolve();
+          }).catch(err => reject(err));
         }).catch(err => reject(err));
-      }).catch(err => reject(err));
-    }
+        break;
 
-    if(snap.val().name === 'OTP_LOGIN_FAILED'){
-      db.ref(`/users/${context.params.userID}/otpFailedCounter`).once('value').then(snapshot => {
-        var nextNum = 1;
-        if(snapshot && snapshot.val())
-          nextNum = snapshot.val() + 1;
-        db.ref(`/users/${context.params.userID}/otpFailedCounter`).set(nextNum).then(() => {
-          resolve();
+      case 'OTP_LOGIN_FAILED':
+        db.ref(`/users/${context.params.userID}/otpFailedCounter`).once('value').then(snapshot => {
+          var nextNum = 1;
+          if(snapshot && snapshot.val())
+            nextNum = snapshot.val() + 1;
+          db.ref(`/users/${context.params.userID}/otpFailedCounter`).set(nextNum).then(() => {
+            resolve();
+          }).catch(err => reject(err));
         }).catch(err => reject(err));
-      }).catch(err => reject(err));
-    }
+        break;
+
+      case 'ADMIN_LOGIN_FAILED':
+        db.ref(`/users/${context.params.userID}/adminFailedCounter`).once('value').then(snapshot => {
+          var nextNum = 1;
+          if(snapshot && snapshot.val())
+            nextNum = snapshot.val() + 1;
+          db.ref(`/users/${context.params.userID}/adminFailedCounter`).set(nextNum).then(() => {
+            resolve();
+          }).catch(err => reject(err));
+        }).catch(err => reject(err));
+        break;
     
-    if(snap.val().name === 'PWD_LOGIN_SUCCESS'){
-      db.ref(`/users/${context.params.userID}/pwdFailedCounter`).set(0)
-        .then(() => resolve())
-        .catch(err => reject(err));
-    }
+      case 'PWD_LOGIN_SUCCESS':
+      case 'PWD_RESET':
+        db.ref(`/users/${context.params.userID}/pwdFailedCounter`).set(0)
+          .then(() => resolve())
+          .catch(err => reject(err));
+        break;
+    
 
-    if(snap.val().name === 'OTP_LOGIN_SUCCESS'){
-      db.ref(`/users/${context.params.userID}/otpFailedCounter`).set(0).then(() => resolve()).catch(err => reject(err));
+      case 'OTP_LOGIN_SUCCESS':
+      case 'OTP_RESET':
+        db.ref(`/users/${context.params.userID}/otpFailedCounter`).set(0).then(() => resolve()).catch(err => reject(err));
+        break;
+      
+      case 'ADMIN_LOGIN_SUCCESS':
+        db.ref(`/users/${context.params.userID}/adminFailedCounter`).set(0).then(() => resolve()).catch(err => reject(err));
+        break;
+      
+      default:
+        resolve();
+        break;
     }
   })
 })
