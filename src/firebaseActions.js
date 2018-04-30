@@ -31,6 +31,78 @@ const fetchFirebaseFunction = (operation, queryObject, fetchOptions) => {
 }
 
 // DB functions
+export const currentUserAdmin = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    db.ref('/adminTester').once('value').then(snapshot => {
+      resolve();
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const getAllNotVerifiedUsers = () => {
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    db.ref('/users').once('value').then(snapshot => {
+      let result = snapshot.val();
+      Promise.all(
+        Object.keys(result).map(userid => {
+          return new Promise((res, rej) => {
+            if(result[userid].evidenceUploaded && !result[userid].piiVerified) {
+              let userRef = storageRef.child(`/userEvidence/${userid}`);
+              Promise.all([0, 1, 2].map(index => {
+                return userRef.child(`/Evidence${index}`).getDownloadURL();
+              })).then(urls => {
+                res({
+                  uid: userid,
+                  verified: false,
+                  FirstName: result[userid].pii.FirstName,
+                  LastName: result[userid].pii.LastName,
+                  Birthday: result[userid].pii.Birthday,
+                  ID: result[userid].pii.ID,
+                  e1: urls[0],
+                  e2: urls[1],
+                  e3: urls[2],
+                })
+              }, err => {
+                if(err)
+                  rej(err);
+              })
+            } else {
+              res();
+            }
+          })
+        })
+      ).then(userDataArr => {
+        let returnData = {};
+        userDataArr.forEach(data => {
+          if(data)
+            returnData[data.uid] = data;
+        })
+        resolve(returnData);
+      }, err => {
+        reject(err);
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
+export const setUserPiiVerified = (usr) => {
+  return new Promise((resolve, reject) => {
+    db.ref(`/users/${usr}/piiVerified`).set(true).then(()=> {
+      resolve();
+    }).catch(err => {
+      reject(err);
+    })
+  })
+}
+
 export const recordUserEvent = (name, email) => {
   if(!email) {
     if(!auth.currentUser)
