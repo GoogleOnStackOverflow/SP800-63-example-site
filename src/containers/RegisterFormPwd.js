@@ -16,13 +16,15 @@ const mapDispatchToProps = dispatch => {
     },
     submitOnClick: (state, history) => {
       dispatch(loading());
-      registerWithEmail(state['FORM_USR'], state['FORM_REG_PWD'])
-      .then(usr => {
+      registerWithEmail(state['FORM_USR'], state['FORM_REG_PWD']).then(usr => {
         dispatch(handleValueOnChange('FORM_REG_PWD_CHECK', ''));
         dispatch(handleValueOnChange('FORM_REG_PWD', ''));
-        sendEmailVerification(() => {
+        sendEmailVerification().then(() => {
           dispatch(notLoading());
           dispatch(successMsg('An verification mail has been sent to your mail address.', '/verifymail'))
+        }, err => {
+          dispatch(notLoading());
+          dispatch(errorMsg(err.message, '/login'));
         }).catch(err => {
           dispatch(notLoading());
           dispatch(errorMsg(err.message, '/login'));
@@ -30,8 +32,7 @@ const mapDispatchToProps = dispatch => {
       }, err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
-      })
-      .catch(err => {
+      }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       });

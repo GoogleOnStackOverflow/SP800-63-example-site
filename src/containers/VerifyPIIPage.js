@@ -28,18 +28,18 @@ const mapDispatchToProps = dispatch => {
     handleCancel: () => {
       dispatch(openCheck(
         'Are you sure to cancel the registration process?',
-        'This action is not revertable. All account info would be deleted immediately.',
-        undefined, '/login'
+        'This action is not revertable. All account info would be deleted immediately.'
       ));
     },
     handleRemove: () => {
       dispatch(loading());
-      removeAllCurrentAccountData()
-      .then(()=> {
+      removeAllCurrentAccountData().then(()=> {
         dispatch(notLoading());
         dispatch(successMsg('Your account and all personal data are removed', '/login'));
-      })
-      .catch(err => {
+      }, err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
+      }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })

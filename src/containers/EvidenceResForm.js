@@ -9,10 +9,12 @@ const mapDispatchToProps = dispatch => {
   return {
     handleSubmit: (images) => {
       dispatch(loading());
-      uploadUserEvidences(images)
-      .then(()=> {
+      uploadUserEvidences(images).then(()=> {
         dispatch(notLoading());
         dispatch(successMsg('Evidences are updated successfully','/piires'));
+      }, err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
       }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));

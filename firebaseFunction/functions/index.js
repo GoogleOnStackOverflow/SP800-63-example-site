@@ -609,6 +609,27 @@ exports.markrecoverflag = functions.https.onRequest((req, res) => {
   }
 })
 
+exports.deleteaccountdb = functions.https.onRequest((req, res) => {
+  res.header('Access-Control-Allow-Origin', "*");
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  if(!req.query.usr)
+    return res.status(400).send('Bad Request');
+
+  verifyTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
+    db.ref(`/users/${email}`).set({}).then(() => {
+      return res.status(200).send('OK');
+    }).catch(err => {
+      return res.status(500).send(err.message);
+    })
+  }, err => {
+    return res.status(400).send(err.message);
+  }).catch(err => {
+    return res.status(400).send(err.message);
+  });  
+})
+
 // Throttling trigger
 exports.manageThrottling = functions.database.ref('/users/{userID}/events/{eventTime}').onCreate((snap, context) => {
   return new Promise((resolve, reject) => {

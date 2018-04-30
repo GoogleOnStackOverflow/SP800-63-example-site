@@ -104,17 +104,18 @@ export const setUserPiiVerified = (usr) => {
 }
 
 export const recordUserEvent = (name, email) => {
-  if(!email) {
-    if(!auth.currentUser)
-      return new Promise((resolve, reject) => {
-        throw Error('Permission Denied. User not logged in');
-      });
-    else
+  return new Promise((resolve, reject) => {
+    if(!email && !auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    if(!email)
       email = auth.currentUser.email;
-  }
-
-  var d = new Date();
-  return db.ref('/users/'+sha256(email)+'/events/'+d).set({name});
+    let d = new Date();
+    db.ref(`/users/${sha256(email)}/events/${d}`).set({name}).then(() => {
+      resolve();
+    }).catch(err => {
+      reject(err);
+    })
+  });
 }
 
 export const setCurrentUserPII = (data) => {
@@ -347,16 +348,20 @@ export const registerWithEmail = (email, password) => {
   return auth.createUserWithEmailAndPassword(email, password);
 }
 
-export const sendEmailVerification = (callback) => {
-  if(auth.currentUser)
-    return auth.currentUser.sendEmailVerification().then(() => {
-      recordUserEvent(userActions.EMAIL_VERIFICATION_SENT).then(() => {
-        callback();  
-      })
-    });
+export const sendEmailVerification = () => {
   return new Promise((resolve, reject) => {
-    throw Error('Permission Denied. User not logged in');
-  })
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    auth.currentUser.sendEmailVerification().then(() => {
+      recordUserEvent(userActions.EMAIL_VERIFICATION_SENT).then(() => {
+        resolve();
+      }, err => {
+        reject(err);
+      })
+    }).catch(err => {
+      reject(err);
+    })
+  });
 }
 
 export const currentUserEmailVerified = () => {
@@ -382,15 +387,14 @@ export const verifySMSCode = (code, confirmationResult) => {
 
     auth.currentUser.linkWithCredential(credential).then((user) => {
       recordUserEvent(userActions.PHONE_VERIFIED).then(() => {
-        db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified')
-        .set(true).then(() => {
+        db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified').set(true).then(() => {
           resolve();
         }).catch(err => {
           reject(err);
         })
-      }).catch(err => {
+      }, err => {
         reject(err);
-      })
+      });
     }, (err) => {
       reject(err);
     });
@@ -408,7 +412,7 @@ export const updateCurrentUserPhone = (phone, code, confirmationResult) => {
         }).catch(err => {
           reject(err);
         })
-      }).catch(err => {
+      }, err => {
         reject(err);
       })
     }, (err) => {
@@ -429,9 +433,7 @@ export const updateCurrentUserPassword = (newPwd) => {
           resolve();
         }, err => {
           reject(err);
-        }).catch(err => {
-          reject(err);
-        })
+        });
       }, err => {
         reject(err);
       }).catch(err => {
@@ -450,8 +452,9 @@ export const updateCurrentUserOTP = (newCredential) => {
     db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(newCredential).then(() => {
       recordUserEvent(userActions.OTP_RESET).then(() => {
         resolve();
-      }, err => reject(err))
-      .catch(err => reject(err))
+      }, err => {
+        reject(err)
+      })
     }).catch(err => {
       reject(err);
     })
@@ -558,9 +561,10 @@ export const loginWithEmailPwd = (email, password) => {
             auth.signInWithEmailAndPassword(email, password).then(() => {
               recordUserEvent(userActions.PWD_LOGIN_SUCCESS).then(()=> {
                 resolve();
+              }, err => {
+                reject(err);
               })
-            })
-            .catch(err => {
+            }).catch(err => {
               if(err.code === 'auth/wrong-password') {
                 recordUserEvent(userActions.PWD_LOGIN_FAILED, email).then(() => {
                   reject(err);
@@ -717,68 +721,81 @@ export const reauthCurrentUser = (pwd, otp) => {
 
 // Remove
 export const removeAccount = () => {
-  if(!auth.currentUser)
-    return new Promise((resolve, reject) => {
-      throw Error('Permission Denied. User not logged in');
-    });
-  return auth.currentUser.delete();
+  return new Promise((resolve, reject) => {
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    auth.currentUser.delete().then(() => resolve(), err => reject(err));
+  })
 }
 
 // Storage functions
 export const uploadUserEvidences = (images) => {
-  if(!auth.currentUser)
-    return new Promise((resolve, reject) => {
-      throw Error('Permission Denied. User not logged in');
-    });
   return new Promise((resolve,reject)=> {
-    db.ref('/users/'+sha256(auth.currentUser.email)+'/evidenceUploaded')
-    .set(true)
-    .then(()=> {
-      var userRef = storageRef.child('/userEvidence/'+sha256(auth.currentUser.email));
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    db.ref('/users/'+sha256(auth.currentUser.email)+'/evidenceUploaded').set(true).then(()=> {
+      let userRef = storageRef.child('/userEvidence/'+sha256(auth.currentUser.email));
       Promise.all(images.map((file, index) => {
         return userRef.child(`/Evidence${index}`).put(file)
-      })).then(
+      })).then(() => {
         recordUserEvent(userActions.EVIDENCE_UPLOADED).then(()=> {
           resolve();
+        }, err => {
+          reject(err);
         })
-      );
+      }).catch(err => {
+        reject(err);
+      });
+    }, err => {
+      reject(err);
     }).catch(err => {
-      console.error(err);
-      throw err;
+      reject(err);
     })
   });
 }
 
 export const removeUserStorage = (email) => {
-  var userRef = storageRef.child('/userEvidence/'+sha256(auth.currentUser.email));
   return new Promise((resolve, reject) => {
+    let userRef = storageRef.child('/userEvidence/'+sha256(auth.currentUser.email));
     Promise.all([0,1,2].map(index => {
       return userRef.child(`/Evidence${index}`).delete();
-    }))
-    .then(resolve())
-    .catch(err => {
-      throw err;
-    })
+    })).then(() => {
+      resolve()
+    }, err => {
+      reject(err);
+    });
   })
 }
 
 //helpers
 export const removeAllCurrentAccountData = () => {
-  if(!auth.currentUser)
-    return new Promise((resolve, reject) => {
-      throw Error('Permission Denied. User not logged in');
-    });
-
-  let mail = auth.currentUser.email;
   return new Promise((resolve, reject) => {
-    Promise.all([
-      removeUserStorage(mail), 
-      removeUserInfo(mail), 
-      removeAccount()])
-    .then(resolve())
-    .catch(err => {
-      throw err;
+    if(!auth.currentUser)
+      reject(Error('Permission Denied. User not logged in'));
+    let mail = auth.currentUser.email;
+
+    auth.currentUser.getIdToken(false).then(tkn => {
+      fetchFirebaseFunction('deleteaccountdb', {usr: tkn}).then(res => {
+        if(res.status === 200) {
+          removeUserStorage(mail).then(() => {
+            removeAccount().then(() => {
+              resolve();
+            }, err => {
+              reject(err);
+            })
+          }, err => {
+            reject(err);
+          })
+        } else {
+          res.text().then(text => {
+            reject(Error(text));
+          })
+        }
+      })
+    }).catch(err => {
+      reject(err);
     })
+    
   });
 }
 

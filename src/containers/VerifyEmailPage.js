@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import VerifyEmail from '../components/VerifyEmail';
 import { openCheck, loading, notLoading, errorMsg, successMsg, clearAllForm } from '../actions';
-import { sendEmailVerification, logout, removeAccount } from '../firebaseActions'
+import { sendEmailVerification, logout, removeAllCurrentAccountData } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {
   return {};
@@ -11,15 +11,18 @@ const mapDispatchToProps = dispatch => {
   return {
     handleResend: () => {
       dispatch(loading());
-      sendEmailVerification(() => {
+      sendEmailVerification().then(() => {
         logout(()=>{
           dispatch(notLoading());
           dispatch(successMsg('An verification mail has been sent to your mail address.', '/login'))
         }).catch(err => {
           dispatch(notLoading());
           dispatch(errorMsg(err.message, '/login'));
-        })}
-      ).catch(err => {
+        })
+      }, err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message, '/login'));
+      }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message, '/login'));
       })
@@ -38,18 +41,18 @@ const mapDispatchToProps = dispatch => {
     handleCancel: () => {
       dispatch(openCheck(
         'Are you sure to cancel the registration process?',
-        'This action is not revertable. All account info would be deleted immediately.',
-        undefined, '/login'
+        'This action is not revertable. All account info would be deleted immediately.'
       ));
     },
     handleRemove: () => {
       dispatch(loading());
-      removeAccount()
-      .then(()=> {
+      removeAllCurrentAccountData().then(()=> {
         dispatch(notLoading());
         dispatch(successMsg('Your account and all personal data have been removed', '/login'));
-      })
-      .catch(err => {
+      }, err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
+      }).catch(err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })
