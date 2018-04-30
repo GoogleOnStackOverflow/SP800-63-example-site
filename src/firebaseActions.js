@@ -196,10 +196,6 @@ export const getUserPII = () => {
   })
 }
 
-export const removeUserInfo = (email) => {
-  return db.ref('/users/'+sha256(email)).set({});
-}
-
 export const setCurrentUserOTP = (credential) => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
