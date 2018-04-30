@@ -478,7 +478,7 @@ export const checkAndSendResetMail = (mail) => {
       reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
     emailUnderRecover(mail).then(result => {
       if(result) {
-        let url = `http://localhost:3000/resetphone${mapObjectToQueryString({email: mail})}`;
+        let url = `https://sp800-63-example-site.firebaseapp.com/resetphone${mapObjectToQueryString({email: mail})}`;
         auth.sendSignInLinkToEmail(mail, {url, handleCodeInApp: true}).then(() => {
           resolve();
         }).catch(err => {

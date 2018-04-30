@@ -89,7 +89,7 @@ const main = (password) => {
     return;
   }
 
-  let hostname = 'http://localhost:3000/admin';
+  let hostname = 'https://sp800-63-example-site.firebaseapp.com/admin';
   let salt = crypto.randomBytes(32);
   let keypair = generateAndReturnKeyPair();
   let wrapped_key = aes256WithPasswordSaltIV(password, salt, iv, keypair[1])

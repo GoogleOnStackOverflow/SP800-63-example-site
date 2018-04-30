@@ -533,7 +533,7 @@ exports.setotpcredential = functions.https.onRequest((req, res) => {
   // Recovering account should login by phone provider before this action
   // For a new account the otp credential should be null in the database
   // For full permission accounts, the otp credential could be set directly from the client
-  verifyTknAndCheckPermission(JSON.parse(req.query.usr)).then(result => {
+  verifyTknSingedByPhone(JSON.parse(req.query.usr)).then(result => {
     verifyTknAndGetShaEmail(JSON.parse(req.query.usr)).then(email => {
       db.ref(`/users/${email}`).once('value').then(snapshot => {
         // if it's a reset account request

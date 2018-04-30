@@ -14,10 +14,10 @@ class PasswordForm extends React.Component {
   }
 
   render() {
-    const {placeHolder, formName, state, handleOnChange, submitOnClick, cancelOnClick, history, challenge} = this.props
+    const {placeHolder, formName, state, handleOnChange, submitOnClick, cancelOnClick, history, challenge, handleCancelChallenge} = this.props
     return (
       <div align='middle'>
-        <ChallengeModal challenge={challenge}/>
+        <ChallengeModal challenge={challenge} handleCancel={handleCancelChallenge}/>
         <CheckModal 
           cancelOnClick={()=>{cancelOnClick(history)}} 
           okOnClick={()=>{}}
@@ -76,7 +76,8 @@ PasswordForm.propTypes = {
   state: PropTypes.obj,
   handleOnChange: PropTypes.func, 
   submitOnClick: PropTypes.func,
-  cancelOnClick: PropTypes.func
+  cancelOnClick: PropTypes.func,
+  handleCancelChallenge: PropTypes.func
 }
 
 export default withRouter(PasswordForm);

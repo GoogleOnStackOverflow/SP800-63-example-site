@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { withRouter } from "react-router-dom"
 import { Modal, Button, Panel, Col } from 'react-bootstrap';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 
-const ChallengeModal = ({challenge}) => {
+const ChallengeModal = ({challenge, handleCancel, history}) => {
   return (
     <Modal show={challenge}>
       <Modal.Header>
@@ -16,6 +17,13 @@ const ChallengeModal = ({challenge}) => {
         </Panel>
       </Modal.Body>
       <Modal.Footer>
+        <Button
+          bsStyle='primary'
+          onClick={() => {
+            handleCancel(history);
+          }}>
+          Login as normal user
+        </Button>
         <CopyToClipboard text={challenge}>
           <Button bsStyle='success'>
             Copy to Clipboard
@@ -27,7 +35,8 @@ const ChallengeModal = ({challenge}) => {
 }
 
 ChallengeModal.proptypes = {
-  challenge: PropTypes.string
+  challenge: PropTypes.string,
+  handleCancel: PropTypes.func,
 }
 
-export default ChallengeModal;
+export default withRouter(ChallengeModal);

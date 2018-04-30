@@ -53,6 +53,10 @@ const mapDispatchToProps = dispatch => {
         dispatch(errorMsg(err.message));
         history.push('/login');  
       })
+    },
+    handleCancelChallenge: (history) => {
+      dispatch(handleValueOnChange('FORM_LOGIN_CHALLENGE', ''))
+      history.push('/service');
     }
   }
 }

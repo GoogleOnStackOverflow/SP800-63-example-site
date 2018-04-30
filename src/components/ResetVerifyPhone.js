@@ -2,9 +2,21 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import * as firebase from 'firebase'
 import { withRouter } from "react-router-dom"
-import * as qs from 'query-string'
 import { Alert, Button, Form, FormGroup, FormControl, ControlLabel , Col, HelpBlock } from 'react-bootstrap'
 import { loginWithEmailLink } from '../firebaseActions'
+
+const getQuery = (search) => {
+  if(!search) return {};
+  let s = search.split('?')[1];
+  let queryStrings = s.split('&');
+  let toReturn = {};
+  for(var i=0; i<queryStrings.length; i++) {
+    let query = queryStrings[i].split('=');
+    toReturn[query[0]] = decodeURIComponent(query[1]);
+  }
+
+  return toReturn;
+}
 
 class ResetVerifyPhone extends React.Component {
   constructor(props){
@@ -13,7 +25,7 @@ class ResetVerifyPhone extends React.Component {
     this.props.handleOnChange('FORM_PII_REG_PHONE_CODE','');
 
     loginWithEmailLink(
-      JSON.parse(qs.parse(this.props.location.search).email), 
+      JSON.parse(getQuery(this.props.location.search).email), 
       window.location.href).then(() => {
       this.props.dispatchNotLoading();
     }, err => {

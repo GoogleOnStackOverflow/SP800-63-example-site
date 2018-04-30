@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { withRouter } from "react-router-dom"
 import { Image, Table, Button } from 'react-bootstrap'
 import { currentUserAdmin, getAllNotVerifiedUsers } from '../firebaseActions'
 
@@ -25,7 +24,7 @@ class ManagerForm extends React.Component {
   }
 
   render() {
-    let { userPiisObj, handleVerifyOnClick, history } = this.props;
+    let { userPiisObj, handleVerifyOnClick } = this.props;
 
     return (
       <div align='middle'>
@@ -78,4 +77,4 @@ ManagerForm.propTypes = {
   dispatchErrMsg: PropTypes.func
 }
 
-export default withRouter(ManagerForm);
+export default ManagerForm;
