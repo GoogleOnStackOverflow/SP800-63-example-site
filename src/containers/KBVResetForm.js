@@ -34,14 +34,19 @@ const mapDispatchToProps = dispatch => {
       dispatch(loading());
       startRecoverProcess(
         state['FORM_USR'], state['FORM_RESET_ID'], 
-        state['FORM_RESET_BIRTHDAY']).then(() => {
-        checkAndSendResetMail(state['FORM_USR']).then(() => {
+        state['FORM_RESET_BIRTHDAY']).then(unfinished => {
+        if(unfinished){
           dispatch(notLoading());
-          dispatch(successMsg('A reset password has been sent to the mail box. Use the link in the mail to continue the recovering process', '/login'));
-        }, err => {
-          dispatch(notLoading());
-          dispatch(errorMsg(err.message));
-        })
+          dispatch(errorMsg('Since you have not finished the enrollment process. Please try to register again with another email or contact the administrator to remove your account mannually.'))
+        } else {
+          checkAndSendResetMail(state['FORM_USR']).then(() => {
+            dispatch(notLoading());
+            dispatch(successMsg('A reset password has been sent to the mail box. Use the link in the mail to continue the recovering process', '/login'));
+          }, err => {
+            dispatch(notLoading());
+            dispatch(errorMsg(err.message));
+          })
+        }
       }, err => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));

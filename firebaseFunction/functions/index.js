@@ -14,6 +14,7 @@ admin.initializeApp({
 });
 
 var db = admin.database();
+var storage = admin.storage();
 
 // helper
 // sign a otp_tkn
@@ -630,9 +631,9 @@ exports.markrecoverflag = functions.https.onRequest((req, res) => {
     }).catch(err => {
       if(err.message === 'NOT_EXISTS')
         return res.status(400).send('Account not exists');
-      else if(err.message === 'NOT_FINISHED')
+      else if(err.message === 'NOT_FINISHED') {
         return res.status(403).send('User has not finished the register process yet')
-      else if(err.message === 'FAILED')
+      } else if(err.message === 'FAILED')
         return res.status(400).send('Permission Denied. The personal information verification failed');
       else
         return res.status(500).send(err.message);

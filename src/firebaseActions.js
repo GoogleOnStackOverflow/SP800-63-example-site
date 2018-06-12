@@ -124,14 +124,14 @@ export const setCurrentUserPII = (data) => {
       reject(Error('Permission Denied. User not logged in'));
     else {
       auth.currentUser.getIdToken(false).then(tkn => {
-        fetchFirebaseFunction('setuserpii', {usr: tkn, pii: data}).then((res) => {
-          res.text().then(text => {
-            if(res.status === 200)
-              resolve();
-            else
-              reject(Error(text));
-            })
-        })
+        return fetchFirebaseFunction('setuserpii', {usr: tkn, pii: data});
+      }).then(res => {
+        return Promise.all([res.status, res.text()]);
+      }).then(result => {
+        if(result[0] === 200)
+          resolve();
+        else
+          reject(Error(result[1]));
       }).catch(err => {
         reject(err);
       })
@@ -148,7 +148,7 @@ export const editCurrentUserPII = (data) => {
         return db.ref(`/users/${sha256(auth.currentUser.email)}/pii/${dataName}`).set(data[dataName]);
       })).then(() => {
         resolve();
-      },err => {
+      }, err => {
         reject(err);
       }).catch(err => {
         reject(err);
@@ -163,17 +163,14 @@ export const currentUserPIISet = () => {
       reject(Error('Permission Denied. User not logged in'));
     else 
       auth.currentUser.getIdToken(false).then(tkn => {
-        fetchFirebaseFunction('userpiiset', {usr: tkn}).then(res => {
-          if(res.status === 200)
-            res.text().then(text => {
-              let result = JSON.parse(text);
-              resolve(result);
-            });
-          else
-            res.text().then(text => {
-              reject(Error(text));  
-            })
-        });
+        return fetchFirebaseFunction('userpiiset', {usr: tkn});
+      }).then(res => {
+        return Promise.all([res.status, res.text()]);
+      }).then(result => {
+        if(result[0] === 200)
+          resolve(JSON.parse(result[1]));
+        else
+          reject(Error(result[1]));
       }).catch(err => {
         reject(err);
       })
@@ -201,14 +198,14 @@ export const setCurrentUserOTP = (credential) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('setotpcredential', {usr: tkn, credential: encodeURIComponent(credential)}).then(res => {
-        if(res.status === 200)
-          resolve();
-        else
-          res.text().then(text => {
-            reject(Error(text));  
-          })
-      });
+      return fetchFirebaseFunction('setotpcredential', {usr: tkn, credential: encodeURIComponent(credential)});
+    }).then(res => {
+      if(res.status === 200)
+        resolve();
+      else
+        return res.text();
+    }).then(text => {
+      reject(Error(text));
     }).catch(err => {
       reject(err);
     })
@@ -221,14 +218,14 @@ export const getCurrentUserPhone = () => {
       reject(Error('Permission Denied. Not logged in'));
 
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('getusrphone', {usr: tkn}).then(res => {
-        res.text().then(result => {
-          if(res.status === 200)
-            resolve(JSON.parse(result));
-          else
-            reject(Error(result));
-        })
-      })
+      return fetchFirebaseFunction('getusrphone', {usr: tkn});
+    }).then(res => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        resolve(JSON.parse(result[1]));
+      else
+        reject(Error(result[1]));
     }).catch(err => {
       reject(err);
     })
@@ -253,19 +250,18 @@ export const currentUserEvidenceUploaded = () => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('userevidenceuploaded', {usr: tkn}).then(res => {
-        res.text().then(result => {
-          if(res.status === 200) {
-            resolve(JSON.parse(result));
-          } else {
-            reject(result);
-          }
-        }) 
-      })
+      return fetchFirebaseFunction('userevidenceuploaded', {usr: tkn});
+    }).then(res => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        resolve(JSON.parse(result[1]));
+      else
+        reject(result[1]);
     }).catch(err => {
       reject(err);
     })
-  })
+  });
 }
 
 export const currentUserPIIVerified = () => {
@@ -273,15 +269,14 @@ export const currentUserPIIVerified = () => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('userpiiverified', {usr: tkn}).then(res => {
-        res.text().then(result => {
-          if(res.status === 200) {
-            resolve(JSON.parse(result));
-          } else {
-            reject(result);
-          }
-        }) 
-      })
+      return fetchFirebaseFunction('userpiiverified', {usr: tkn});
+    }).then(res => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        resolve(JSON.parse(result[1]));
+      else
+        reject(result[1]);
     }).catch(err => {
       reject(err);
     })
@@ -293,39 +288,38 @@ export const currentUserPhoneVerified = () => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('userphoneverified', {usr: tkn}).then(res => {
-        res.text().then(result => {
-          if(res.status === 200) {
-            resolve(JSON.parse(result));
-          } else {
-            reject(result);
-          }
-        }) 
-      })
+      return fetchFirebaseFunction('userphoneverified', {usr: tkn})
+    }).then(res => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        resolve(JSON.parse(result[1]));
+      else 
+        reject(result[1]);
     }).catch(err => {
       reject(err);
     })
-  })
+  });
 }
 
 export const currentUserOTPDelivered = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
+    
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('otpdeliverd', {usr: tkn}).then(res => {
-        res.text().then(result => {
-          if(res.status === 200) {
-            resolve(JSON.parse(result));
-          } else {
-            reject(result);
-          }
-        }) 
-      })
+      return fetchFirebaseFunction('otpdeliverd', {usr: tkn})
+    }).then(res => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        resolve(JSON.parse(result[1]));
+      else 
+        reject(result[1]);
     }).catch(err => {
       reject(err);
     })
-  })
+  });
 }
 
 // Auth functions
@@ -349,12 +343,8 @@ export const sendEmailVerification = () => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'));
     auth.currentUser.sendEmailVerification().then(() => {
-      recordUserEvent(userActions.EMAIL_VERIFICATION_SENT).then(() => {
-        resolve();
-      }, err => {
-        reject(err);
-      })
-    }).catch(err => {
+      return recordUserEvent(userActions.EMAIL_VERIFICATION_SENT);
+    }).then(() => resolve(), err => reject(err)).catch(err => {
       reject(err);
     })
   });
@@ -382,18 +372,12 @@ export const verifySMSCode = (code, confirmationResult) => {
     let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
 
     auth.currentUser.linkWithCredential(credential).then((user) => {
-      recordUserEvent(userActions.PHONE_VERIFIED).then(() => {
-        db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified').set(true).then(() => {
-          resolve();
-        }).catch(err => {
-          reject(err);
-        })
-      }, err => {
-        reject(err);
-      });
-    }, (err) => {
-      reject(err);
-    });
+      return recordUserEvent(userActions.PHONE_VERIFIED);
+    }).then(() => {
+      return db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified').set(true);
+    }, err => reject(err)).then(() => {
+      resolve();
+    }).catch(err => reject(err));
   })
 }
 
@@ -402,17 +386,11 @@ export const updateCurrentUserPhone = (phone, code, confirmationResult) => {
     let credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);
 
     auth.currentUser.updatePhoneNumber(credential).then(() => {
-      recordUserEvent(userActions.PHONE_EDITED).then(() => {
-        db.ref('/users/'+sha256(auth.currentUser.email)+'/pii/Phone').set(phone).then(() => {
-          resolve();
-        }).catch(err => {
-          reject(err);
-        })
-      }, err => {
-        reject(err);
-      })
-    }, (err) => {
-      reject(err);
+      return recordUserEvent(userActions.PHONE_EDITED);
+    }).then(() => {
+      return db.ref('/users/'+sha256(auth.currentUser.email)+'/pii/Phone').set(phone);
+    }, err => reject(err)).then(() => {
+      resolve();
     }).catch(err => {
       reject(err);
     });
@@ -424,20 +402,11 @@ export const updateCurrentUserPassword = (newPwd) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
     getUserPII().then(() => {
-      auth.currentUser.updatePassword(newPwd).then(() => {
-        recordUserEvent(userActions.PWD_RESET).then(() => {
-          resolve();
-        }, err => {
-          reject(err);
-        });
-      }, err => {
-        reject(err);
-      }).catch(err => {
-        reject(err)
-      });
-    }, err => {
-      reject(err);
-    })
+      return auth.currentUser.updatePassword(newPwd);
+    }, err => reject(err)).then(() => {
+      return recordUserEvent(userActions.PWD_RESET)
+    }).then(() => resolve(), err => reject(err))
+    .catch(err => reject(err));
   })
 }
 
@@ -476,15 +445,16 @@ export const checkAndSendResetMail = (mail) => {
     if(!mail)
       reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
     emailUnderRecover(mail).then(result => {
-      if(result) {
-        let url = `https://sp800-63-example-site.firebaseapp.com/resetphone${mapObjectToQueryString({email: mail})}`;
-        auth.sendSignInLinkToEmail(mail, {url, handleCodeInApp: true}).then(() => {
-          resolve();
-        }).catch(err => {
-          reject(err);
-        })
-      }
+      if(result)
+        return `https://sp800-63-example-site.firebaseapp.com/resetphone${mapObjectToQueryString({email: mail})}`;
+      else reject(Error('Permission Denied. Account not under recovery process.'));
     }, err => {
+      reject(err);
+    }).then(url => {
+      return auth.sendSignInLinkToEmail(mail, {url, handleCodeInApp: true});
+    }).then(() => {
+      resolve();
+    }).catch(err => {
       reject(err);
     });
   })
@@ -495,14 +465,17 @@ export const startRecoverProcess = (mail, id, birthday) => {
     if(!mail || !id || !birthday)
       reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
     fetchFirebaseFunction('markrecoverflag', {usr: sha256(mail), id, birthday}).then((res) => {
-      if(res.status === 200) {
-        resolve();
-      } else {
-        res.text().then(text => {
-          reject(Error(text));  
-        })
-      }
-    })
+      if(res.status === 200)
+        resolve(false);
+      else if(res.status === 403)
+        resolve(true);
+      else 
+        return res.text()
+    }).then(text => {
+      reject(Error(text));  
+    }).catch(err => {
+      reject(err);
+    });
   })
 }
 
@@ -511,20 +484,19 @@ export const stopRecoverProcess = (mail) => {
     if(!mail)
       reject(Error('Data lost. Please fill all the forms and check you did not refresh the page before doing anything here'));
     emailUnderRecover(mail).then(result => {
-      if(result) {
-        fetchFirebaseFunction('markrecoverflag', {usr: sha256(mail)}).then((res) => {
-          if(res.status === 200) {
-            resolve();
-          } else {
-            res.text().then(text => {
-              reject(Error(text));  
-            })
-          }
-        })
-      } else {
-        reject(Error('Permission Denied. Account does not exists or is not under recover.'))
-      }
+      if(result)
+        return fetchFirebaseFunction('markrecoverflag', {usr: sha256(mail)})
+      else reject(Error('Permission Denied. Account does not exists or is not under recover.'));
     }, err => {
+      reject(err);
+    }).then((res) => {
+      if(res.status === 200)
+        resolve();
+      else
+        return res.text();
+    }).then(text => {
+      reject(Error(text));  
+    }).catch(err => {
       reject(err);
     })
   })
@@ -534,12 +506,12 @@ export const stopRecoverProcess = (mail) => {
 export const checkAccountExist = (email) => {
   return new Promise((resolve, reject) => {
     fetchFirebaseFunction('emailusedup', {usr: sha256(email)}).then(res => {
-      res.text().then(text => {
-        if(res.status === 200) 
-          resolve(JSON.parse(text));
-        else 
-          reject(Error(text));
-      })
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200) 
+        resolve(JSON.parse(result[1]));
+      else 
+        reject(Error(result[1]));
     }).catch(err => {
       reject(err);
     })
@@ -549,33 +521,32 @@ export const checkAccountExist = (email) => {
 export const loginWithEmailPwd = (email, password) => {
   return new Promise((resolve, reject) => {
     emailUnderRecover(email).then(result => {
-      if(result) {
+      if(result)
         reject(Error('UnderRecover'));
-      } else {
-        db.ref('/users/'+sha256(email)+'/pwdFailedCounter').once('value').then(snapshot => {
-          if(!snapshot || !snapshot.val() || snapshot.val() <= 5)
-            auth.signInWithEmailAndPassword(email, password).then(() => {
-              recordUserEvent(userActions.PWD_LOGIN_SUCCESS).then(()=> {
-                resolve();
-              }, err => {
-                reject(err);
-              })
-            }).catch(err => {
-              if(err.code === 'auth/wrong-password') {
-                recordUserEvent(userActions.PWD_LOGIN_FAILED, email).then(() => {
-                  reject(err);
-                })
-              } else {
-                reject(err);
-              }
-            })
-          else
-            reject(Error('Permission denied. Wrong password trial limit reached'));
-        }).catch(err => reject(err))
-      }
+      else
+        return db.ref('/users/'+sha256(email)+'/pwdFailedCounter').once('value');
     }, err => {
       reject(err);
-    })
+    }).then(snapshot => {
+      if(!snapshot || !snapshot.val() || snapshot.val() <= 5)
+        return auth.signInWithEmailAndPassword(email, password);
+      else
+        reject(Error('Permission denied. Wrong password trial limit reached'));
+    }).then(() => {
+      return recordUserEvent(userActions.PWD_LOGIN_SUCCESS);
+    }).then(()=> {
+      resolve();
+    }, err => {
+      reject(err);
+    }).catch(err => {
+      if(err.code === 'auth/wrong-password')
+        return Promise.all([
+          err, recordUserEvent(userActions.PWD_LOGIN_FAILED, email)
+        ]);
+      else reject(err);
+    }).then(result => {
+      reject(result[0]);       
+    }).catch(err => reject(err));
   }) 
 }
 
@@ -611,25 +582,20 @@ export const loginWithOTP = (otp) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'))
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('otpverifier', 
+      return fetchFirebaseFunction('otpverifier', 
         {usr: tkn, tkn: otp},
         {method: 'POST', mode: 'cors'}
-      ).then((res)=> {
-        res.text().then(text => {
-          if(res.status === 200){
-            auth.signOut().then(() => {
-              auth.signInWithCustomToken(text).then(() => {
-                resolve();
-              }).catch(err => {
-                reject(err);
-              });
-            }).catch(err => {
-              reject(err);
-            })
-          } else
-          reject(Error(text))
-        });
-      })
+      );
+    }).then((res)=> {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        return Promise.all([result[1], auth.signOut()]);
+      else reject(Error(result[1]));
+    }).then(result => {
+      return auth.signInWithCustomToken(result[0]);
+    }).then(() => {
+      resolve();
     }).catch(err => {
       reject(err);
     })
@@ -639,18 +605,16 @@ export const loginWithOTP = (otp) => {
 export const loginGetChallenge = () => {
   return new Promise((resolve, reject) => {
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('getchallenge', {usr: tkn}).then((res) => {
-        res.text().then(text => {
-          if(res.status === 200)
-            resolve(JSON.parse(text));
-          else if (res.status === 204)
-            reject();
-          else
-            reject(Error(text));
-        })
-      }).catch(err => {
-        reject(err);
-      })
+      return fetchFirebaseFunction('getchallenge', {usr: tkn});
+    }).then((res) => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200)
+        resolve(JSON.parse(result[1]));
+      else if (result[0] === 204)
+        reject();
+      else
+        reject(Error(result[1]));
     }).catch(err => {
       reject(err);
     })
@@ -662,27 +626,24 @@ export const loginWithSignature = (tkn, sig) => {
     // First sign out usr to make the tkn clean
     auth.signOut().then(() => {
       // Sign in with the tkn
-      auth.signInWithCustomToken(tkn).then(() => {
-        // Use the tkn to fetch login request
-        auth.currentUser.getIdToken(false).then(newtkn =>{
-          // Fetch request with tkn and signed challenge
-          fetchFirebaseFunction('verifychallenge', {usr: newtkn, sig}).then(res => {
-            res.text().then(text => {
-              // If verification success, sign in with the new token to get full permission
-              if(res.status === 200) {
-                auth.signOut().then(()=>{
-                  auth.signInWithCustomToken(text).then(() => {
-                    resolve();
-                  })
-                });
-              } else {
-                // if not verified, reject the error message
-                reject(Error(text));
-              }
-            })
-          })
-        })
-      })
+      return auth.signInWithCustomToken(tkn);
+    }).then(() => {
+      // Use the tkn to fetch login request
+      return auth.currentUser.getIdToken(false)
+    }).then(newtkn =>{
+      // Fetch request with tkn and signed challenge
+      return fetchFirebaseFunction('verifychallenge', {usr: newtkn, sig});
+    }).then(res => {
+      return Promise.all([res.status, res.text()]);
+    }).then(result => {
+      if(result[0] === 200) // If verification success, sign in with the new token to get full permission
+        return Promise.all([result[1], auth.signOut()]);
+      else // if not verified, reject the error message
+        reject(Error(result[1]));
+    }).then(result => {
+      return auth.signInWithCustomToken(result[0]);
+    }).then(() => {
+      resolve();
     }).catch(err => {
       // reject all error
       reject(err);
@@ -731,17 +692,13 @@ export const uploadUserEvidences = (images) => {
       reject(Error('Permission Denied. User not logged in'));
     db.ref('/users/'+sha256(auth.currentUser.email)+'/evidenceUploaded').set(true).then(()=> {
       let userRef = storageRef.child('/userEvidence/'+sha256(auth.currentUser.email));
-      Promise.all(images.map((file, index) => {
+      return Promise.all(images.map((file, index) => {
         return userRef.child(`/Evidence${index}`).put(file)
-      })).then(() => {
-        recordUserEvent(userActions.EVIDENCE_UPLOADED).then(()=> {
-          resolve();
-        }, err => {
-          reject(err);
-        })
-      }).catch(err => {
-        reject(err);
-      });
+      }));
+    }).then(() => {
+      return recordUserEvent(userActions.EVIDENCE_UPLOADED);
+    }).then(()=> {
+      resolve();
     }, err => {
       reject(err);
     }).catch(err => {
@@ -757,7 +714,7 @@ export const removeUserStorage = (email) => {
       return userRef.child(`/Evidence${index}`).delete();
     })).then(() => {
       resolve()
-    }, err => {
+    }).catch(err => {
       resolve(err);
     });
   })
@@ -771,24 +728,22 @@ export const removeAllCurrentAccountData = () => {
     let mail = auth.currentUser.email;
 
     auth.currentUser.getIdToken(false).then(tkn => {
-      Promise.all([
-        fetchFirebaseFunction('deleteaccountdb', {usr: tkn}),
-        removeAccount(),
-        removeUserStorage(mail)
-      ]).then((results) => {
-        if(results[0].status !== 200) {
-          results[0].text().then(text => {
-            reject(Error(text));
-          })
-        }
-        if(results[1]) reject(results[1]);
-
-        resolve();
-      })
+      return fetchFirebaseFunction('deleteaccountdb', {usr: tkn});
+    }).then(res => {
+      if(res.status === 200)
+        return Promise.all([
+          removeAccount(),
+          removeUserStorage(mail)
+        ]);
+      else return res.text()
+    }).then(result => {
+      if(Array.isArray(result)){
+        if(result[0]) reject(result[0]);
+        else resolve();
+      } else reject(Error(result));
     }).catch(err => {
       reject(err);
     })
-    
   });
 }
 

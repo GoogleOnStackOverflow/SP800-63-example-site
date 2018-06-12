@@ -120,7 +120,7 @@ class RegisterPIIForm extends React.Component {
         this.props.history.push('/verifypii');
     }, err => {
       this.props.dispatchNotLoading();
-      this.props.dispatchErrMsg(err);
+      this.props.dispatchErrMsg(err.message);
     });
   }
 
