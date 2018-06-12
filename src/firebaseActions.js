@@ -720,7 +720,7 @@ export const removeAccount = () => {
   return new Promise((resolve, reject) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. User not logged in'));
-    auth.currentUser.delete().then(() => resolve(), err => reject(err));
+    auth.currentUser.delete().then(() => resolve(), err => resolve(err));
   })
 }
 
@@ -758,7 +758,7 @@ export const removeUserStorage = (email) => {
     })).then(() => {
       resolve()
     }, err => {
-      reject(err);
+      resolve(err);
     });
   })
 }
@@ -771,22 +771,19 @@ export const removeAllCurrentAccountData = () => {
     let mail = auth.currentUser.email;
 
     auth.currentUser.getIdToken(false).then(tkn => {
-      fetchFirebaseFunction('deleteaccountdb', {usr: tkn}).then(res => {
-        if(res.status === 200) {
-          removeUserStorage(mail).then(() => {
-            removeAccount().then(() => {
-              resolve();
-            }, err => {
-              reject(err);
-            })
-          }, err => {
-            reject(err);
-          })
-        } else {
-          res.text().then(text => {
+      Promise.all([
+        fetchFirebaseFunction('deleteaccountdb', {usr: tkn}),
+        removeAccount(),
+        removeUserStorage(mail)
+      ]).then((results) => {
+        if(results[0].status !== 200) {
+          results[0].text().then(text => {
             reject(Error(text));
           })
         }
+        if(results[1]) reject(results[1]);
+
+        resolve();
       })
     }).catch(err => {
       reject(err);
