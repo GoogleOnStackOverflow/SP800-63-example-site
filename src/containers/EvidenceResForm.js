@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import EvidenceForm from '../components/EvidenceForm';
-import { loading, notLoading, errorMsg, successMsg } from '../actions';
-import { uploadUserEvidences } from '../firebaseActions'
+import { loading, notLoading, errorMsg, successMsg, openCheck } from '../actions';
+import { uploadUserEvidences, removeAllCurrentAccountData } from '../firebaseActions'
 
 const mapStateToProps = (state, ownProps) => {}
 
@@ -19,6 +19,25 @@ const mapDispatchToProps = dispatch => {
         dispatch(notLoading());
         dispatch(errorMsg(err.message));
       })
+    },
+    handleRemove: () => {
+      dispatch(loading());
+      removeAllCurrentAccountData().then(()=> {
+        dispatch(notLoading());
+        dispatch(successMsg('Your account and all personal data are removed', '/login'));
+      }, err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
+      }).catch(err => {
+        dispatch(notLoading());
+        dispatch(errorMsg(err.message));
+      })
+    },
+    cancelOnClick: () => {
+      dispatch(openCheck(
+        'Are you sure to cancel the registration process?',
+        'This action is not revertible. All account info would be deleted immediately.'
+      ));
     },
     dispatchLoading: () => {
       dispatch(loading());

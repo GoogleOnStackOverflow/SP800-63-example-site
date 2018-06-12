@@ -4,6 +4,8 @@ import { withRouter } from "react-router-dom";
 import { Form, FormGroup, FormControl, Button, ControlLabel, HelpBlock, Well, Image } from 'react-bootstrap';
 import { hasCurrentUser, currentUserEvidenceUploaded } from '../firebaseActions'
 
+import CheckModal from '../containers/CheckModal'
+
 const FieldGroup = ({ id, label, help, ...props }) => {
   return (
     <FormGroup controlId={id}>
@@ -69,7 +71,7 @@ class EvidenceForm extends React.Component {
       'Evidence #2 (Front Side)',
     ]
     let {imagePreview, image} = this.state;
-    let {handleSubmit} = this.props;
+    let {handleSubmit, cancelOnClick, handleRemove} = this.props;
     let $imagePreviewBlock = [];
     for(var i=0; i<3; i++) {
       if (imagePreview[i]) {
@@ -81,6 +83,7 @@ class EvidenceForm extends React.Component {
 
     return (
       <Form>
+        <CheckModal cancelOnClick={()=>{}} okOnClick={handleRemove} />
         <FormGroup controlId="formHorizontalPassword">
           <h4>Evidence Resolution</h4>
           {imageDescribtions.map((describtion, index) => {
@@ -100,6 +103,11 @@ class EvidenceForm extends React.Component {
             )
           })}
         </FormGroup>
+        <Button 
+          bsStyle='danger'
+          onClick={cancelOnClick}>
+          Cancel Registration
+        </Button>
         <Button type='submit' 
           onClick={(e)=>{
             e.preventDefault();
@@ -114,6 +122,8 @@ class EvidenceForm extends React.Component {
 
 EvidenceForm.propTypes = {
   handleSubmit: PropTypes.func,
+  cancelOnClick: PropTypes.func,
+  handleRemove: PropTypes.func,
   dispatchLoading: PropTypes.func,
   dispatchNotLoading: PropTypes.func,
   dispatchErrMsg: PropTypes.func
