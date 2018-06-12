@@ -26,7 +26,7 @@ const mapDispatchToProps = dispatch => {
       dispatch(reauthUser());
       dispatch(openCheck(
         'Are you sure to remove your account?',
-        'This action is not revertable. All account info would be deleted immediately.'
+        'This action is not revertible. All account info would be deleted immediately.'
       ));
     },
     handleRemove: (state) => {
