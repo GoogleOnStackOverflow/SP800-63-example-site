@@ -118,17 +118,21 @@ exports.otpverifier = functions.https.onRequest((req, res) => {
     if(speakeasy.totp.verify({secret: Buffer.from(credential, 'ascii'), token: otp})) {
       // if otp verification successed, record the event
       let d = new Date();
-      return db.ref(`/users/${email}/events/${d}`).set({name: 'OTP_LOGIN_SUCCESS'});
+      return Promise.all([email,
+        db.ref(`/users/${email}/events/${d}`).set({name: 'OTP_LOGIN_SUCCESS'})
+      ]);
     } else {
       // OTP verification failed
       throw Error('INVALID');
     }
-  }).then(() => {
+  }).then(results => {
     // event recorded, record the passed OTP
-    return db.ref(`/users/${email}/lastOTP`).set(otp)
-  }).then(() => {
+    return Promise.all([results[0],
+      db.ref(`/users/${results[0]}/lastOTP`).set(otp)
+    ]);
+  }).then(results => {
     // Last OTP recorded, sign the OTP token
-    return signTkn(JSON.parse(req.query.usr), {otpVerified: true, dbUsrID: email});
+    return signTkn(JSON.parse(req.query.usr), {otpVerified: true, dbUsrID: results[0]});
   }).then(tkn => {
     // sign success, response the token
     return res.status(200).send(JSON.stringify(tkn));
@@ -319,24 +323,27 @@ exports.getchallenge = functions.https.onRequest((req, res) => {
     // OTP verified
     if(email)
       // Get the data
-      return db.ref(`/users/${email}/`).once('value');
+      return Promise.all([email,
+        db.ref(`/users/${email}/`).once('value')
+      ]);
     // OTP Not verified
     else
       throw Error('Permission Denied. OTP not verifeid.');
-  }).then(snapshot => {
+  }).then(results => {
+    let snapshot = results[1];
     // check if the account is an admin
     if(snapshot.val() && snapshot.val().admin) {
       // check the throttling info
       if(!snapshot.val().adminFailedCounter || snapshot.val().adminFailedCounter <=5)
-        return crypto.randomBytes(32);
+        return Promise.all([results[0], crypto.randomBytes(32)]);
       else 
         throw Error('THROTTLED');
     } else 
       throw Error('NOT_ADMIN');
-  }).then(nonce => {
+  }).then(results => {
     // Got a nonce, record it in user db
-    return Promise.all([nonce.toString('base64'),
-      db.ref(`/users/${email}/adminNonce`).set(nonce.toString('base64'))
+    return Promise.all([results[1].toString('base64'),
+      db.ref(`/users/${results[0]}/adminNonce`).set(results[1].toString('base64'))
     ]);
   }).then((results) => {
     // Sign the token

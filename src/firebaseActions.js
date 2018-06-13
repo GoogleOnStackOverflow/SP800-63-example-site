@@ -591,7 +591,7 @@ export const loginWithOTP = (otp) => {
     }).then(result => {
       if(result[0] === 200)
         return Promise.all([result[1], auth.signOut()]);
-      else reject(Error(result[1]));
+      else throw Error(result[1]);
     }).then(result => {
       return auth.signInWithCustomToken(result[0]);
     }).then(() => {
