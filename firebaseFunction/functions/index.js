@@ -58,15 +58,18 @@ const verifyOTPTknAndGetShaEmail = (tkn) => {
 const verifyChallengeTknAndGetInfo = (tkn) => {
   return admin.auth().verifyIdToken(tkn).then(decodedToken => {
     if(decodedToken.challenge) {
-      return getEmailByUid(decodedToken.uid);
+      return Promise.all([
+        decodedToken.challenge,
+        getEmailByUid(decodedToken.uid)
+      ]);
     } else {
       return false;
     }
-  }).then(email => {
-    if(email) 
+  }).then(results => {
+    if(results) 
       return {
-        usr: sha256(email),
-        chl: decodedToken.challenge
+        usr: sha256(results[1]),
+        chl: results[0]
       };
     else return email;
   })
@@ -82,13 +85,13 @@ const checkOTPQualificationThenCredential = (usr, otp) => {
   return db.ref(`/users/${usr}`).once('value').then(snapshot => {
     if(!snapshot || !snapshot.val())
       throw Error('User not found.');
-    if(snapshot.val().otpFailedCounter && snapshot.val.otpFailedCounter >5)
-      throw Error('OTP Wrong trial limit reached. Please reset your account to resolve this');
 
-    if(snapshot.val().lastOTP){
-      if(snapshot.val().lastOTP === otp)
-        throw Error('The OTP is used just right now. Please wait for the next one');
+    if(snapshot.val().otpFailedCounter && snapshot.val().otpFailedCounter >5) {
+      throw Error('OTP Wrong trial limit reached. Please reset your account to resolve this');
     }
+
+    if(snapshot.val().lastOTP && snapshot.val().lastOTP === otp)
+      throw Error('The OTP is used just right now. Please wait for the next one');
 
     return snapshot.val().otpCredential;
   });
@@ -123,7 +126,9 @@ exports.otpverifier = functions.https.onRequest((req, res) => {
       ]);
     } else {
       // OTP verification failed
-      throw Error('INVALID');
+      let err = new Object();
+      err.email = email;
+      throw err;
     }
   }).then(results => {
     // event recorded, record the passed OTP
@@ -138,10 +143,15 @@ exports.otpverifier = functions.https.onRequest((req, res) => {
     return res.status(200).send(JSON.stringify(tkn));
   }).catch(err => {
     // error thown, catch and response
-    if(err.message === 'INVALID')
-      return res.status(400).send('OTP Verification Failed (Invalid OTP)');
-    else
+    if(err.email) {
+      let d = new Date();
+      return db.ref(`/users/${err.email}/events/${d}`).set({name: 'OTP_LOGIN_FAILED'})
+    } else
       return res.status(500).send(err.message);
+  }).then(() => {
+    return res.status(400).send('OTP Verification Failed (Invalid OTP)');
+  }).catch(err => {
+    return res.status(500).send(err.message);
   });
 });
 

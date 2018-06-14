@@ -104,18 +104,15 @@ export const setUserPiiVerified = (usr) => {
 }
 
 export const recordUserEvent = (name, email) => {
-  return new Promise((resolve, reject) => {
-    if(!email && !auth.currentUser)
-      reject(Error('Permission Denied. User not logged in'));
-    if(!email)
-      email = auth.currentUser.email;
-    let d = new Date();
-    db.ref(`/users/${sha256(email)}/events/${d}`).set({name}).then(() => {
-      resolve();
-    }).catch(err => {
-      reject(err);
-    })
-  });
+  if(!email && !auth.currentUser)
+    throw Error('Permission Denied. User not logged in');
+
+  if(!email)
+    email = auth.currentUser.email;
+  
+  let d = new Date();
+
+  return db.ref(`/users/${sha256(email)}/events/${d}`).set({name})
 }
 
 export const setCurrentUserPII = (data) => {
@@ -344,7 +341,8 @@ export const sendEmailVerification = () => {
       reject(Error('Permission Denied. User not logged in'));
     auth.currentUser.sendEmailVerification().then(() => {
       return recordUserEvent(userActions.EMAIL_VERIFICATION_SENT);
-    }).then(() => resolve(), err => reject(err)).catch(err => {
+    }).then(() => resolve()
+    ).catch(err => {
       reject(err);
     })
   });
@@ -375,9 +373,8 @@ export const verifySMSCode = (code, confirmationResult) => {
       return recordUserEvent(userActions.PHONE_VERIFIED);
     }).then(() => {
       return db.ref('/users/'+sha256(auth.currentUser.email)+'/userPhoneVerified').set(true);
-    }, err => reject(err)).then(() => {
-      resolve();
-    }).catch(err => reject(err));
+    }).then(() => resolve()
+    ).catch(err => reject(err));
   })
 }
 
@@ -389,7 +386,7 @@ export const updateCurrentUserPhone = (phone, code, confirmationResult) => {
       return recordUserEvent(userActions.PHONE_EDITED);
     }).then(() => {
       return db.ref('/users/'+sha256(auth.currentUser.email)+'/pii/Phone').set(phone);
-    }, err => reject(err)).then(() => {
+    }).then(() => {
       resolve();
     }).catch(err => {
       reject(err);
@@ -415,14 +412,9 @@ export const updateCurrentUserOTP = (newCredential) => {
     if(!auth.currentUser)
       reject(Error('Permission Denied. Not logged in'));
     db.ref('/users/'+sha256(auth.currentUser.email)+'/otpCredential').set(newCredential).then(() => {
-      recordUserEvent(userActions.OTP_RESET).then(() => {
-        resolve();
-      }, err => {
-        reject(err)
-      })
-    }).catch(err => {
-      reject(err);
-    })
+      return recordUserEvent(userActions.OTP_RESET);
+    }).then(() => resolve()
+    ).catch(err => reject(err))
   });
 }
 
@@ -536,8 +528,6 @@ export const loginWithEmailPwd = (email, password) => {
       return recordUserEvent(userActions.PWD_LOGIN_SUCCESS);
     }).then(()=> {
       resolve();
-    }, err => {
-      reject(err);
     }).catch(err => {
       if(err.code === 'auth/wrong-password')
         return Promise.all([
@@ -545,7 +535,7 @@ export const loginWithEmailPwd = (email, password) => {
         ]);
       else reject(err);
     }).then(result => {
-      reject(result[0]);       
+      reject(result[0]);
     }).catch(err => reject(err));
   }) 
 }
@@ -699,8 +689,6 @@ export const uploadUserEvidences = (images) => {
       return recordUserEvent(userActions.EVIDENCE_UPLOADED);
     }).then(()=> {
       resolve();
-    }, err => {
-      reject(err);
     }).catch(err => {
       reject(err);
     })
